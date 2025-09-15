@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { fromPostgres } from '../postgresql';
 
 describe('PostgreSQL Real-World Examples', () => {
-    describe('Magical Academy Example', () => {
-        it('should parse the magical academy example with all 16 tables', async () => {
-            const sql = `
+  describe('Magical Academy Example', () => {
+    it('should parse the magical academy example with all 16 tables', async () => {
+      const sql = `
                     CREATE TABLE schools(
                         id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
                         name text NOT NULL,
@@ -152,73 +152,71 @@ describe('PostgreSQL Real-World Examples', () => {
                         USING (school_id = current_setting('app.current_school')::uuid);
                 `;
 
-            const result = await fromPostgres(sql);
+      const result = await fromPostgres(sql);
 
-            // Should find all 16 tables
-            const expectedTables = [
-                'apprentices',
-                'arcane_logs',
-                'gold_payments',
-                'grimoire_types',
-                'grimoires',
-                'patron_sponsorships',
-                'rank_spell_permissions',
-                'ranks',
-                'schools',
-                'spell_lessons',
-                'spell_permissions',
-                'towers',
-                'tuition_items',
-                'tuition_scrolls',
-                'wizard_ranks',
-                'wizards',
-            ];
+      // Should find all 16 tables
+      const expectedTables = [
+        'apprentices',
+        'arcane_logs',
+        'gold_payments',
+        'grimoire_types',
+        'grimoires',
+        'patron_sponsorships',
+        'rank_spell_permissions',
+        'ranks',
+        'schools',
+        'spell_lessons',
+        'spell_permissions',
+        'towers',
+        'tuition_items',
+        'tuition_scrolls',
+        'wizard_ranks',
+        'wizards',
+      ];
 
-            expect(result.tables).toHaveLength(16);
-            expect(result.tables.map((t) => t.name).sort()).toEqual(
-                expectedTables
-            );
+      expect(result.tables).toHaveLength(16);
+      expect(result.tables.map((t) => t.name).sort()).toEqual(expectedTables);
 
-            // Verify key relationships exist
-            const relationships = result.relationships;
+      // Verify key relationships exist
+      const relationships = result.relationships;
 
-            // Check some critical relationships
-            expect(
-                relationships.some(
-                    (r) =>
-                        r.sourceTable === 'wizards' &&
-                        r.targetTable === 'schools' &&
-                        r.sourceColumn === 'school_id'
-                )
-            ).toBe(true);
+      // Check some critical relationships
+      expect(
+        relationships.some(
+          (r) =>
+            r.sourceTable === 'wizards' &&
+            r.targetTable === 'schools' &&
+            r.sourceColumn === 'school_id'
+        )
+      ).toBe(true);
 
-            expect(
-                relationships.some(
-                    (r) =>
-                        r.sourceTable === 'wizard_ranks' &&
-                        r.targetTable === 'wizards' &&
-                        r.sourceColumn === 'wizard_id'
-                )
-            ).toBe(true);
+      expect(
+        relationships.some(
+          (r) =>
+            r.sourceTable === 'wizard_ranks' &&
+            r.targetTable === 'wizards' &&
+            r.sourceColumn === 'wizard_id'
+        )
+      ).toBe(true);
 
-            expect(
-                relationships.some(
-                    (r) =>
-                        r.sourceTable === 'apprentices' &&
-                        r.targetTable === 'wizards' &&
-                        r.sourceColumn === 'primary_mentor'
-                )
-            ).toBe(true);
+      expect(
+        relationships.some(
+          (r) =>
+            r.sourceTable === 'apprentices' &&
+            r.targetTable === 'wizards' &&
+            r.sourceColumn === 'primary_mentor'
+        )
+      ).toBe(true);
 
-            // Should have warnings about functions, policies, and RLS
-            expect(result.warnings).toBeDefined();
-            expect(result.warnings!.length).toBeGreaterThan(0);
-        });
+      // Should have warnings about functions, policies, and RLS
+      expect(result.warnings).toBeDefined();
+      expect(result.warnings!.length).toBeGreaterThan(0);
     });
+  });
 
-    describe('Enchanted Bazaar Example', () => {
-        it('should parse the enchanted bazaar example with functions and policies', async () => {
-            const sql = `
+  describe('Enchanted Bazaar Example', () => {
+    it('should parse the enchanted bazaar example with functions and policies', async () => {
+      const sql = `
                     -- Enchanted Bazaar tables with complex features
                     CREATE TABLE merchants(
                         id SERIAL PRIMARY KEY,
@@ -272,59 +270,56 @@ describe('PostgreSQL Real-World Examples', () => {
                         EXECUTE FUNCTION consume_charges();
                 `;
 
-            const result = await fromPostgres(sql);
+      const result = await fromPostgres(sql);
 
-            // Should parse all tables despite functions, policies, and triggers
-            expect(result.tables.length).toBeGreaterThanOrEqual(4);
+      // Should parse all tables despite functions, policies, and triggers
+      expect(result.tables.length).toBeGreaterThanOrEqual(4);
 
-            // Check for specific tables
-            const tableNames = result.tables.map((t) => t.name);
-            expect(tableNames).toContain('merchants');
-            expect(tableNames).toContain('artifacts');
-            expect(tableNames).toContain('trades');
-            expect(tableNames).toContain('trade_items');
+      // Check for specific tables
+      const tableNames = result.tables.map((t) => t.name);
+      expect(tableNames).toContain('merchants');
+      expect(tableNames).toContain('artifacts');
+      expect(tableNames).toContain('trades');
+      expect(tableNames).toContain('trade_items');
 
-            // Check relationships
-            if (tableNames.includes('marketplace_tokens')) {
-                // Real file relationships
-                expect(
-                    result.relationships.some(
-                        (r) =>
-                            r.sourceTable === 'marketplace_listings' &&
-                            r.targetTable === 'inventory_items'
-                    )
-                ).toBe(true);
-            } else {
-                // Mock data relationships
-                expect(
-                    result.relationships.some(
-                        (r) =>
-                            r.sourceTable === 'artifacts' &&
-                            r.targetTable === 'merchants'
-                    )
-                ).toBe(true);
+      // Check relationships
+      if (tableNames.includes('marketplace_tokens')) {
+        // Real file relationships
+        expect(
+          result.relationships.some(
+            (r) =>
+              r.sourceTable === 'marketplace_listings' &&
+              r.targetTable === 'inventory_items'
+          )
+        ).toBe(true);
+      } else {
+        // Mock data relationships
+        expect(
+          result.relationships.some(
+            (r) =>
+              r.sourceTable === 'artifacts' && r.targetTable === 'merchants'
+          )
+        ).toBe(true);
 
-                expect(
-                    result.relationships.some(
-                        (r) =>
-                            r.sourceTable === 'trade_items' &&
-                            r.targetTable === 'trades'
-                    )
-                ).toBe(true);
-            }
+        expect(
+          result.relationships.some(
+            (r) => r.sourceTable === 'trade_items' && r.targetTable === 'trades'
+          )
+        ).toBe(true);
+      }
 
-            // Should have warnings about unsupported features
-            if (result.warnings) {
-                expect(
-                    result.warnings.some(
-                        (w) =>
-                            w.includes('Function') ||
-                            w.includes('Policy') ||
-                            w.includes('Trigger') ||
-                            w.includes('ROW LEVEL SECURITY')
-                    )
-                ).toBe(true);
-            }
-        });
+      // Should have warnings about unsupported features
+      if (result.warnings) {
+        expect(
+          result.warnings.some(
+            (w) =>
+              w.includes('Function') ||
+              w.includes('Policy') ||
+              w.includes('Trigger') ||
+              w.includes('ROW LEVEL SECURITY')
+          )
+        ).toBe(true);
+      }
     });
+  });
 });

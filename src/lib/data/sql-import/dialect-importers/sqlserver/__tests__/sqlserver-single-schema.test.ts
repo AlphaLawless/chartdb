@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { fromSQLServer } from '../sqlserver';
 
 describe('SQL Server Single-Schema Database Tests', () => {
-    it('should parse a comprehensive fantasy-themed single-schema database with many foreign key relationships', async () => {
-        // This test simulates a complex single-schema database similar to real-world scenarios
-        // It tests the fix for parsing ALTER TABLE ADD CONSTRAINT statements without schema prefixes
-        const sql = `
+  it('should parse a comprehensive fantasy-themed single-schema database with many foreign key relationships', async () => {
+    // This test simulates a complex single-schema database similar to real-world scenarios
+    // It tests the fix for parsing ALTER TABLE ADD CONSTRAINT statements without schema prefixes
+    const sql = `
 -- =============================================
 -- Enchanted Kingdom Management System
 -- A comprehensive fantasy database using single schema (dbo)
@@ -596,109 +596,105 @@ ALTER TABLE [Transactions] ADD CONSTRAINT [FK_Transactions_Currency]
     FOREIGN KEY ([CurrencyID]) REFERENCES [Currencies]([CurrencyID]);
         `;
 
-        const result = await fromSQLServer(sql);
+    const result = await fromSQLServer(sql);
 
-        // Debug: log table names to see what's parsed
-        console.log('Tables found:', result.tables.length);
-        console.log(
-            'Table names:',
-            result.tables.map((t) => t.name)
-        );
+    // Debug: log table names to see what's parsed
+    console.log('Tables found:', result.tables.length);
+    console.log(
+      'Table names:',
+      result.tables.map((t) => t.name)
+    );
 
-        // Verify correct number of tables
-        expect(result.tables.length).toBe(37); // Actually 37 tables after counting
+    // Verify correct number of tables
+    expect(result.tables.length).toBe(37); // Actually 37 tables after counting
 
-        // Verify all tables use default 'dbo' schema
-        const schemas = new Set(result.tables.map((t) => t.schema));
-        expect(schemas.size).toBe(1);
-        expect(schemas.has('dbo')).toBe(true);
+    // Verify all tables use default 'dbo' schema
+    const schemas = new Set(result.tables.map((t) => t.schema));
+    expect(schemas.size).toBe(1);
+    expect(schemas.has('dbo')).toBe(true);
 
-        // Verify correct number of relationships
-        console.log('Relationships found:', result.relationships.length);
-        expect(result.relationships.length).toBe(55); // 55 foreign key relationships that can be parsed
+    // Verify correct number of relationships
+    console.log('Relationships found:', result.relationships.length);
+    expect(result.relationships.length).toBe(55); // 55 foreign key relationships that can be parsed
 
-        // Verify all relationships have valid source and target table IDs
-        const validRelationships = result.relationships.filter(
-            (r) => r.sourceTableId && r.targetTableId
-        );
-        expect(validRelationships.length).toBe(result.relationships.length);
+    // Verify all relationships have valid source and target table IDs
+    const validRelationships = result.relationships.filter(
+      (r) => r.sourceTableId && r.targetTableId
+    );
+    expect(validRelationships.length).toBe(result.relationships.length);
 
-        // Check specific table names exist
-        const tableNames = result.tables.map((t) => t.name);
-        expect(tableNames).toContain('Kingdoms');
-        expect(tableNames).toContain('Characters');
-        expect(tableNames).toContain('Guilds');
-        expect(tableNames).toContain('Items');
-        expect(tableNames).toContain('Spells');
-        expect(tableNames).toContain('Quests');
-        expect(tableNames).toContain('Battles');
-        expect(tableNames).toContain('Monsters');
+    // Check specific table names exist
+    const tableNames = result.tables.map((t) => t.name);
+    expect(tableNames).toContain('Kingdoms');
+    expect(tableNames).toContain('Characters');
+    expect(tableNames).toContain('Guilds');
+    expect(tableNames).toContain('Items');
+    expect(tableNames).toContain('Spells');
+    expect(tableNames).toContain('Quests');
+    expect(tableNames).toContain('Battles');
+    expect(tableNames).toContain('Monsters');
 
-        // Verify some specific relationships exist and are properly linked
-        const characterToClass = result.relationships.find(
-            (r) => r.name === 'FK_Characters_Classes'
-        );
-        expect(characterToClass).toBeDefined();
-        expect(characterToClass?.sourceTable).toBe('Characters');
-        expect(characterToClass?.targetTable).toBe('CharacterClasses');
-        expect(characterToClass?.sourceColumn).toBe('ClassID');
-        expect(characterToClass?.targetColumn).toBe('ClassID');
+    // Verify some specific relationships exist and are properly linked
+    const characterToClass = result.relationships.find(
+      (r) => r.name === 'FK_Characters_Classes'
+    );
+    expect(characterToClass).toBeDefined();
+    expect(characterToClass?.sourceTable).toBe('Characters');
+    expect(characterToClass?.targetTable).toBe('CharacterClasses');
+    expect(characterToClass?.sourceColumn).toBe('ClassID');
+    expect(characterToClass?.targetColumn).toBe('ClassID');
 
-        const guildsToCity = result.relationships.find(
-            (r) => r.name === 'FK_Guilds_Cities'
-        );
-        expect(guildsToCity).toBeDefined();
-        expect(guildsToCity?.sourceTable).toBe('Guilds');
-        expect(guildsToCity?.targetTable).toBe('Cities');
+    const guildsToCity = result.relationships.find(
+      (r) => r.name === 'FK_Guilds_Cities'
+    );
+    expect(guildsToCity).toBeDefined();
+    expect(guildsToCity?.sourceTable).toBe('Guilds');
+    expect(guildsToCity?.targetTable).toBe('Cities');
 
-        const inventoryToItems = result.relationships.find(
-            (r) => r.name === 'FK_Inventory_Items'
-        );
-        expect(inventoryToItems).toBeDefined();
-        expect(inventoryToItems?.sourceTable).toBe('CharacterInventory');
-        expect(inventoryToItems?.targetTable).toBe('Items');
+    const inventoryToItems = result.relationships.find(
+      (r) => r.name === 'FK_Inventory_Items'
+    );
+    expect(inventoryToItems).toBeDefined();
+    expect(inventoryToItems?.sourceTable).toBe('CharacterInventory');
+    expect(inventoryToItems?.targetTable).toBe('Items');
 
-        // Check self-referencing relationship
-        const questPrerequisite = result.relationships.find(
-            (r) => r.name === 'FK_Quests_Prerequisites'
-        );
-        expect(questPrerequisite).toBeDefined();
-        expect(questPrerequisite?.sourceTable).toBe('Quests');
-        expect(questPrerequisite?.targetTable).toBe('Quests');
+    // Check self-referencing relationship
+    const questPrerequisite = result.relationships.find(
+      (r) => r.name === 'FK_Quests_Prerequisites'
+    );
+    expect(questPrerequisite).toBeDefined();
+    expect(questPrerequisite?.sourceTable).toBe('Quests');
+    expect(questPrerequisite?.targetTable).toBe('Quests');
 
-        // Verify table IDs are correctly linked in relationships
-        for (const rel of result.relationships) {
-            const sourceTable = result.tables.find(
-                (t) =>
-                    t.name === rel.sourceTable && t.schema === rel.sourceSchema
-            );
-            const targetTable = result.tables.find(
-                (t) =>
-                    t.name === rel.targetTable && t.schema === rel.targetSchema
-            );
+    // Verify table IDs are correctly linked in relationships
+    for (const rel of result.relationships) {
+      const sourceTable = result.tables.find(
+        (t) => t.name === rel.sourceTable && t.schema === rel.sourceSchema
+      );
+      const targetTable = result.tables.find(
+        (t) => t.name === rel.targetTable && t.schema === rel.targetSchema
+      );
 
-            expect(sourceTable).toBeDefined();
-            expect(targetTable).toBeDefined();
-            expect(rel.sourceTableId).toBe(sourceTable?.id);
-            expect(rel.targetTableId).toBe(targetTable?.id);
-        }
+      expect(sourceTable).toBeDefined();
+      expect(targetTable).toBeDefined();
+      expect(rel.sourceTableId).toBe(sourceTable?.id);
+      expect(rel.targetTableId).toBe(targetTable?.id);
+    }
 
-        console.log('Single-schema test results:');
-        console.log('Total tables:', result.tables.length);
-        console.log('Total relationships:', result.relationships.length);
-        console.log(
-            'All relationships properly linked:',
-            validRelationships.length === result.relationships.length
-        );
+    console.log('Single-schema test results:');
+    console.log('Total tables:', result.tables.length);
+    console.log('Total relationships:', result.relationships.length);
+    console.log(
+      'All relationships properly linked:',
+      validRelationships.length === result.relationships.length
+    );
 
-        // Sample of relationship names for verification
-        const sampleRelationships = result.relationships
-            .slice(0, 5)
-            .map((r) => ({
-                name: r.name,
-                source: `${r.sourceTable}.${r.sourceColumn}`,
-                target: `${r.targetTable}.${r.targetColumn}`,
-            }));
-        console.log('Sample relationships:', sampleRelationships);
-    });
+    // Sample of relationship names for verification
+    const sampleRelationships = result.relationships.slice(0, 5).map((r) => ({
+      name: r.name,
+      source: `${r.sourceTable}.${r.sourceColumn}`,
+      target: `${r.targetTable}.${r.targetColumn}`,
+    }));
+    console.log('Sample relationships:', sampleRelationships);
+  });
 });

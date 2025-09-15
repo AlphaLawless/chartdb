@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { fromPostgres } from '../postgresql';
 
 describe('PostgreSQL Complex Database - Enchanted Bazaar', () => {
-    it('should parse the complete magical marketplace database', async () => {
-        const sql = `-- Enchanted Bazaar Database Schema
+  it('should parse the complete magical marketplace database', async () => {
+    const sql = `-- Enchanted Bazaar Database Schema
 -- A complex magical marketplace system with many enums and relationships
 
 -- Enums for the magical marketplace
@@ -241,82 +241,82 @@ CREATE TABLE audit_logs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );`;
 
-        console.log('Parsing SQL...');
-        const startTime = Date.now();
-        const result = await fromPostgres(sql);
-        const parseTime = Date.now() - startTime;
+    console.log('Parsing SQL...');
+    const startTime = Date.now();
+    const result = await fromPostgres(sql);
+    const parseTime = Date.now() - startTime;
 
-        console.log(`Parse completed in ${parseTime}ms`);
+    console.log(`Parse completed in ${parseTime}ms`);
 
-        // Expected counts
-        const expectedTables = 27;
-        const expectedEnums = 15;
-        const minExpectedRelationships = 36; // Adjusted based on actual relationships in the schema
+    // Expected counts
+    const expectedTables = 27;
+    const expectedEnums = 15;
+    const minExpectedRelationships = 36; // Adjusted based on actual relationships in the schema
 
-        console.log('\n=== PARSING RESULTS ===');
-        console.log(
-            `Tables parsed: ${result.tables.length} (expected: ${expectedTables})`
-        );
-        console.log(
-            `Enums parsed: ${result.enums?.length || 0} (expected: ${expectedEnums})`
-        );
-        console.log(
-            `Relationships parsed: ${result.relationships.length} (expected min: ${minExpectedRelationships})`
-        );
-        console.log(`Warnings: ${result.warnings?.length || 0}`);
+    console.log('\n=== PARSING RESULTS ===');
+    console.log(
+      `Tables parsed: ${result.tables.length} (expected: ${expectedTables})`
+    );
+    console.log(
+      `Enums parsed: ${result.enums?.length || 0} (expected: ${expectedEnums})`
+    );
+    console.log(
+      `Relationships parsed: ${result.relationships.length} (expected min: ${minExpectedRelationships})`
+    );
+    console.log(`Warnings: ${result.warnings?.length || 0}`);
 
-        // List parsed tables
-        console.log('\n=== TABLES PARSED ===');
-        const tableNames = result.tables.map((t) => t.name).sort();
-        tableNames.forEach((name) => console.log(`- ${name}`));
+    // List parsed tables
+    console.log('\n=== TABLES PARSED ===');
+    const tableNames = result.tables.map((t) => t.name).sort();
+    tableNames.forEach((name) => console.log(`- ${name}`));
 
-        // List enums
-        if (result.enums && result.enums.length > 0) {
-            console.log('\n=== ENUMS PARSED ===');
-            result.enums.forEach((e) => {
-                console.log(`- ${e.name}: ${e.values.length} values`);
-            });
-        }
+    // List enums
+    if (result.enums && result.enums.length > 0) {
+      console.log('\n=== ENUMS PARSED ===');
+      result.enums.forEach((e) => {
+        console.log(`- ${e.name}: ${e.values.length} values`);
+      });
+    }
 
-        // Show warnings if any
-        if (result.warnings && result.warnings.length > 0) {
-            console.log('\n=== WARNINGS ===');
-            result.warnings.forEach((w) => console.log(`- ${w}`));
-        }
+    // Show warnings if any
+    if (result.warnings && result.warnings.length > 0) {
+      console.log('\n=== WARNINGS ===');
+      result.warnings.forEach((w) => console.log(`- ${w}`));
+    }
 
-        // Verify counts
-        expect(result.tables).toHaveLength(expectedTables);
-        expect(result.enums).toBeDefined();
-        expect(result.enums).toHaveLength(expectedEnums);
-        expect(result.relationships.length).toBeGreaterThanOrEqual(
-            minExpectedRelationships
-        );
+    // Verify counts
+    expect(result.tables).toHaveLength(expectedTables);
+    expect(result.enums).toBeDefined();
+    expect(result.enums).toHaveLength(expectedEnums);
+    expect(result.relationships.length).toBeGreaterThanOrEqual(
+      minExpectedRelationships
+    );
 
-        // Check specific tables exist
-        const criticalTables = [
-            'wizards',
-            'shops',
-            'listings',
-            'transactions',
-            'reviews',
-        ];
-        criticalTables.forEach((tableName) => {
-            const table = result.tables.find((t) => t.name === tableName);
-            expect(table).toBeDefined();
-        });
-
-        // Check junction tables
-        const junctionTables = [
-            'shop_sanctuaries',
-            'listing_enchantments',
-            'favorites',
-            'shop_followers',
-            'wizard_achievements',
-        ];
-        junctionTables.forEach((tableName) => {
-            const table = result.tables.find((t) => t.name === tableName);
-            expect(table).toBeDefined();
-            expect(table!.columns.length).toBeGreaterThanOrEqual(2);
-        });
+    // Check specific tables exist
+    const criticalTables = [
+      'wizards',
+      'shops',
+      'listings',
+      'transactions',
+      'reviews',
+    ];
+    criticalTables.forEach((tableName) => {
+      const table = result.tables.find((t) => t.name === tableName);
+      expect(table).toBeDefined();
     });
+
+    // Check junction tables
+    const junctionTables = [
+      'shop_sanctuaries',
+      'listing_enchantments',
+      'favorites',
+      'shop_followers',
+      'wizard_achievements',
+    ];
+    junctionTables.forEach((tableName) => {
+      const table = result.tables.find((t) => t.name === tableName);
+      expect(table).toBeDefined();
+      expect(table!.columns.length).toBeGreaterThanOrEqual(2);
+    });
+  });
 });

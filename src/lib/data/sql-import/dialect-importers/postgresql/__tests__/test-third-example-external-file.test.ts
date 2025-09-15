@@ -1,11 +1,11 @@
-import { describe, it, expect } from 'vitest';
-import { fromPostgres } from '../postgresql';
-import { convertToChartDBDiagram } from '../../../common';
+import { describe, expect, it } from 'vitest';
 import { DatabaseType } from '@/lib/domain/database-type';
+import { convertToChartDBDiagram } from '../../../common';
+import { fromPostgres } from '../postgresql';
 
 describe('Enum Parsing Test - Quest Management System', () => {
-    it('should parse all 5 enums from the quest management database', async () => {
-        const sql = `-- Quest Management System with Enums
+  it('should parse all 5 enums from the quest management database', async () => {
+    const sql = `-- Quest Management System with Enums
 CREATE TYPE quest_status AS ENUM ('draft', 'active', 'on_hold', 'completed', 'abandoned');
 CREATE TYPE difficulty_level AS ENUM ('novice', 'apprentice', 'journeyman', 'expert', 'master');
 CREATE TYPE reward_type AS ENUM ('gold', 'item', 'experience', 'reputation', 'special');
@@ -59,73 +59,67 @@ CREATE TABLE rewards (
     value INTEGER NOT NULL
 );`;
 
-        // Use the improved parser
-        const parserResult = await fromPostgres(sql);
+    // Use the improved parser
+    const parserResult = await fromPostgres(sql);
 
-        console.log('\nParser Result:');
-        console.log('- Enums found:', parserResult.enums?.length || 0);
-        if (parserResult.enums) {
-            parserResult.enums.forEach((e) => {
-                console.log(`  - ${e.name}: ${e.values.length} values`);
-            });
+    console.log('\nParser Result:');
+    console.log('- Enums found:', parserResult.enums?.length || 0);
+    if (parserResult.enums) {
+      parserResult.enums.forEach((e) => {
+        console.log(`  - ${e.name}: ${e.values.length} values`);
+      });
+    }
+
+    // Convert to diagram
+    const diagram = convertToChartDBDiagram(
+      parserResult,
+      DatabaseType.POSTGRESQL,
+      DatabaseType.POSTGRESQL
+    );
+
+    console.log('\nDiagram Result:');
+    console.log('- Custom types:', diagram.customTypes?.length || 0);
+    if (diagram.customTypes) {
+      diagram.customTypes.forEach((t) => {
+        console.log(`  - ${t.name} (${t.kind})`);
+      });
+    }
+
+    // Check contracts table
+    const contractsTable = diagram.tables?.find((t) => t.name === 'contracts');
+    if (contractsTable) {
+      console.log('\nContracts table enum fields:');
+      const enumFields = ['status'];
+      enumFields.forEach((fieldName) => {
+        const field = contractsTable.fields.find((f) => f.name === fieldName);
+        if (field) {
+          console.log(
+            `  - ${field.name}: ${field.type.name} (id: ${field.type.id})`
+          );
         }
+      });
+    }
 
-        // Convert to diagram
-        const diagram = convertToChartDBDiagram(
-            parserResult,
-            DatabaseType.POSTGRESQL,
-            DatabaseType.POSTGRESQL
-        );
+    // Assertions
+    expect(parserResult.enums).toHaveLength(5);
+    expect(diagram.customTypes).toHaveLength(5);
 
-        console.log('\nDiagram Result:');
-        console.log('- Custom types:', diagram.customTypes?.length || 0);
-        if (diagram.customTypes) {
-            diagram.customTypes.forEach((t) => {
-                console.log(`  - ${t.name} (${t.kind})`);
-            });
-        }
+    // Check quest_status specifically
+    const questStatusParser = parserResult.enums?.find(
+      (e) => e.name === 'quest_status'
+    );
+    expect(questStatusParser).toBeDefined();
 
-        // Check contracts table
-        const contractsTable = diagram.tables?.find(
-            (t) => t.name === 'contracts'
-        );
-        if (contractsTable) {
-            console.log('\nContracts table enum fields:');
-            const enumFields = ['status'];
-            enumFields.forEach((fieldName) => {
-                const field = contractsTable.fields.find(
-                    (f) => f.name === fieldName
-                );
-                if (field) {
-                    console.log(
-                        `  - ${field.name}: ${field.type.name} (id: ${field.type.id})`
-                    );
-                }
-            });
-        }
+    const questStatusDiagram = diagram.customTypes?.find(
+      (t) => t.name === 'quest_status'
+    );
+    expect(questStatusDiagram).toBeDefined();
 
-        // Assertions
-        expect(parserResult.enums).toHaveLength(5);
-        expect(diagram.customTypes).toHaveLength(5);
-
-        // Check quest_status specifically
-        const questStatusParser = parserResult.enums?.find(
-            (e) => e.name === 'quest_status'
-        );
-        expect(questStatusParser).toBeDefined();
-
-        const questStatusDiagram = diagram.customTypes?.find(
-            (t) => t.name === 'quest_status'
-        );
-        expect(questStatusDiagram).toBeDefined();
-
-        // Check that status field uses the enum
-        const questsTable = diagram.tables?.find((t) => t.name === 'quests');
-        if (questsTable) {
-            const statusField = questsTable.fields.find(
-                (f) => f.name === 'status'
-            );
-            expect(statusField?.type.name).toBe('quest_status');
-        }
-    });
+    // Check that status field uses the enum
+    const questsTable = diagram.tables?.find((t) => t.name === 'quests');
+    if (questsTable) {
+      const statusField = questsTable.fields.find((f) => f.name === 'status');
+      expect(statusField?.type.name).toBe('quest_status');
+    }
+  });
 });

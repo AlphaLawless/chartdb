@@ -1,24 +1,24 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { fromPostgres } from '../postgresql';
 
 describe('PostgreSQL Core Parser Tests', () => {
-    it('should parse basic tables', async () => {
-        const sql = `
+  it('should parse basic tables', async () => {
+    const sql = `
             CREATE TABLE wizards (
                 id INTEGER PRIMARY KEY,
                 name VARCHAR(255) NOT NULL
             );
         `;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(1);
-        expect(result.tables[0].name).toBe('wizards');
-        expect(result.tables[0].columns).toHaveLength(2);
-    });
+    expect(result.tables).toHaveLength(1);
+    expect(result.tables[0].name).toBe('wizards');
+    expect(result.tables[0].columns).toHaveLength(2);
+  });
 
-    it('should parse foreign key relationships', async () => {
-        const sql = `
+  it('should parse foreign key relationships', async () => {
+    const sql = `
             CREATE TABLE guilds (id INTEGER PRIMARY KEY);
             CREATE TABLE mages (
                 id INTEGER PRIMARY KEY,
@@ -26,16 +26,16 @@ describe('PostgreSQL Core Parser Tests', () => {
             );
         `;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(2);
-        expect(result.relationships).toHaveLength(1);
-        expect(result.relationships[0].sourceTable).toBe('mages');
-        expect(result.relationships[0].targetTable).toBe('guilds');
-    });
+    expect(result.tables).toHaveLength(2);
+    expect(result.relationships).toHaveLength(1);
+    expect(result.relationships[0].sourceTable).toBe('mages');
+    expect(result.relationships[0].targetTable).toBe('guilds');
+  });
 
-    it('should skip functions with warnings', async () => {
-        const sql = `
+  it('should skip functions with warnings', async () => {
+    const sql = `
             CREATE TABLE test_table (id INTEGER PRIMARY KEY);
             
             CREATE FUNCTION test_func() RETURNS VOID AS $$
@@ -45,15 +45,15 @@ describe('PostgreSQL Core Parser Tests', () => {
             $$ LANGUAGE plpgsql;
         `;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(1);
-        expect(result.warnings).toBeDefined();
-        expect(result.warnings!.some((w) => w.includes('Function'))).toBe(true);
-    });
+    expect(result.tables).toHaveLength(1);
+    expect(result.warnings).toBeDefined();
+    expect(result.warnings!.some((w) => w.includes('Function'))).toBe(true);
+  });
 
-    it('should handle tables that fail to parse', async () => {
-        const sql = `
+  it('should handle tables that fail to parse', async () => {
+    const sql = `
             CREATE TABLE valid_table (id INTEGER PRIMARY KEY);
             
             -- This table has syntax that might fail parsing
@@ -69,28 +69,27 @@ describe('PostgreSQL Core Parser Tests', () => {
             );
         `;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        // Should find all 3 tables even if complex_table fails to parse
-        expect(result.tables).toHaveLength(3);
-        expect(result.tables.map((t) => t.name).sort()).toEqual([
-            'another_valid',
-            'complex_table',
-            'valid_table',
-        ]);
+    // Should find all 3 tables even if complex_table fails to parse
+    expect(result.tables).toHaveLength(3);
+    expect(result.tables.map((t) => t.name).sort()).toEqual([
+      'another_valid',
+      'complex_table',
+      'valid_table',
+    ]);
 
-        // Should still find the foreign key relationship
-        expect(
-            result.relationships.some(
-                (r) =>
-                    r.sourceTable === 'another_valid' &&
-                    r.targetTable === 'complex_table'
-            )
-        ).toBe(true);
-    });
+    // Should still find the foreign key relationship
+    expect(
+      result.relationships.some(
+        (r) =>
+          r.sourceTable === 'another_valid' && r.targetTable === 'complex_table'
+      )
+    ).toBe(true);
+  });
 
-    it('should parse the magical academy system fixture', async () => {
-        const sql = `-- Magical Academy System Database Schema
+  it('should parse the magical academy system fixture', async () => {
+    const sql = `-- Magical Academy System Database Schema
 -- This is a test fixture representing a typical magical academy system
 
 CREATE TABLE magic_schools(
@@ -360,78 +359,78 @@ CREATE TRIGGER arcane_audit_wizards AFTER INSERT OR UPDATE OR DELETE ON wizards
 CREATE TRIGGER arcane_audit_apprentices AFTER INSERT OR UPDATE OR DELETE ON apprentices
     FOR EACH ROW EXECUTE FUNCTION arcane_audit_trigger();`;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        // Should find all 16 tables
-        expect(result.tables).toHaveLength(16);
+    // Should find all 16 tables
+    expect(result.tables).toHaveLength(16);
 
-        const tableNames = result.tables.map((t) => t.name).sort();
-        const expectedTables = [
-            'apprentices',
-            'arcane_logs',
-            'gold_payments',
-            'grimoire_types',
-            'grimoires',
-            'magic_schools',
-            'magical_ranks',
-            'patron_sponsorships',
-            'rank_permissions',
-            'scroll_line_items',
-            'spell_lessons',
-            'spell_permissions',
-            'towers',
-            'tuition_scrolls',
-            'wizard_ranks',
-            'wizards',
-        ];
+    const tableNames = result.tables.map((t) => t.name).sort();
+    const expectedTables = [
+      'apprentices',
+      'arcane_logs',
+      'gold_payments',
+      'grimoire_types',
+      'grimoires',
+      'magic_schools',
+      'magical_ranks',
+      'patron_sponsorships',
+      'rank_permissions',
+      'scroll_line_items',
+      'spell_lessons',
+      'spell_permissions',
+      'towers',
+      'tuition_scrolls',
+      'wizard_ranks',
+      'wizards',
+    ];
 
-        expect(tableNames).toEqual(expectedTables);
+    expect(tableNames).toEqual(expectedTables);
 
-        // Should have many relationships
-        expect(result.relationships.length).toBeGreaterThan(30);
+    // Should have many relationships
+    expect(result.relationships.length).toBeGreaterThan(30);
 
-        // Should have warnings about unsupported features
-        expect(result.warnings).toBeDefined();
-        expect(result.warnings!.length).toBeGreaterThan(0);
+    // Should have warnings about unsupported features
+    expect(result.warnings).toBeDefined();
+    expect(result.warnings!.length).toBeGreaterThan(0);
 
-        // Verify specific critical relationships exist
-        const hasWizardSchoolFK = result.relationships.some(
-            (r) =>
-                r.sourceTable === 'wizards' &&
-                r.targetTable === 'magic_schools' &&
-                r.sourceColumn === 'school_id'
-        );
-        expect(hasWizardSchoolFK).toBe(true);
+    // Verify specific critical relationships exist
+    const hasWizardSchoolFK = result.relationships.some(
+      (r) =>
+        r.sourceTable === 'wizards' &&
+        r.targetTable === 'magic_schools' &&
+        r.sourceColumn === 'school_id'
+    );
+    expect(hasWizardSchoolFK).toBe(true);
 
-        const hasApprenticeMentorFK = result.relationships.some(
-            (r) =>
-                r.sourceTable === 'apprentices' &&
-                r.targetTable === 'wizards' &&
-                r.sourceColumn === 'primary_mentor'
-        );
-        expect(hasApprenticeMentorFK).toBe(true);
-    });
+    const hasApprenticeMentorFK = result.relationships.some(
+      (r) =>
+        r.sourceTable === 'apprentices' &&
+        r.targetTable === 'wizards' &&
+        r.sourceColumn === 'primary_mentor'
+    );
+    expect(hasApprenticeMentorFK).toBe(true);
+  });
 
-    it('should handle ALTER TABLE ENABLE ROW LEVEL SECURITY', async () => {
-        const sql = `
+  it('should handle ALTER TABLE ENABLE ROW LEVEL SECURITY', async () => {
+    const sql = `
             CREATE TABLE secure_table (id INTEGER PRIMARY KEY);
             ALTER TABLE secure_table ENABLE ROW LEVEL SECURITY;
         `;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(1);
-        expect(result.warnings).toBeDefined();
-        // The warning should mention row level security
-        expect(
-            result.warnings!.some((w) =>
-                w.toLowerCase().includes('row level security')
-            )
-        ).toBe(true);
-    });
+    expect(result.tables).toHaveLength(1);
+    expect(result.warnings).toBeDefined();
+    // The warning should mention row level security
+    expect(
+      result.warnings!.some((w) =>
+        w.toLowerCase().includes('row level security')
+      )
+    ).toBe(true);
+  });
 
-    it('should extract foreign keys even from unparsed tables', async () => {
-        const sql = `
+  it('should extract foreign keys even from unparsed tables', async () => {
+    const sql = `
             CREATE TABLE base (id UUID PRIMARY KEY);
             
             -- Intentionally malformed to fail parsing
@@ -443,16 +442,16 @@ CREATE TRIGGER arcane_audit_apprentices AFTER INSERT OR UPDATE OR DELETE ON appr
             2) -- Missing closing paren will cause parse failure
         `;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        // Should still create the table entry
-        expect(result.tables.map((t) => t.name)).toContain('malformed');
+    // Should still create the table entry
+    expect(result.tables.map((t) => t.name)).toContain('malformed');
 
-        // Should extract the foreign key
-        const fks = result.relationships.filter(
-            (r) => r.sourceTable === 'malformed'
-        );
-        expect(fks.length).toBeGreaterThan(0);
-        expect(fks[0].targetTable).toBe('base');
-    });
+    // Should extract the foreign key
+    const fks = result.relationships.filter(
+      (r) => r.sourceTable === 'malformed'
+    );
+    expect(fks.length).toBeGreaterThan(0);
+    expect(fks[0].targetTable).toBe('base');
+  });
 });

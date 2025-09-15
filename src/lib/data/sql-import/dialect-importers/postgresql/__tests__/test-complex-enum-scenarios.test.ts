@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { fromPostgres } from '../postgresql';
 
 describe('Complex enum scenarios from real files', () => {
-    it('should handle multiple schema-qualified enums with various syntax issues', async () => {
-        // This test mimics the issues found in postgres_six_example_sql_script.sql
-        const sql = `
+  it('should handle multiple schema-qualified enums with various syntax issues', async () => {
+    // This test mimics the issues found in postgres_six_example_sql_script.sql
+    const sql = `
 CREATE TYPE "public"."wizard_status" AS ENUM('active', 'suspended', 'banned', 'inactive');
 CREATE TYPE "public"."magic_school" AS ENUM('fire', 'water', 'earth', 'air', 'spirit');
 CREATE TYPE "public"."spell_tier" AS ENUM('cantrip', 'novice', 'adept', 'expert', 'master', 'legendary');
@@ -60,80 +60,78 @@ ALTER TABLE "spells" ADD CONSTRAINT "spells_wizard_id_wizard_id_fk"
     FOREIGN KEY ("wizard_id") REFERENCES "public"."wizard"("id") ON DELETE cascade ON UPDATE no action;
 `;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        // Check enum parsing
-        console.log('\n=== ENUMS FOUND ===');
-        console.log('Count:', result.enums?.length || 0);
-        if (result.enums) {
-            result.enums.forEach((e) => {
-                console.log(`  - ${e.name}: ${e.values.length} values`);
-            });
-        }
+    // Check enum parsing
+    console.log('\n=== ENUMS FOUND ===');
+    console.log('Count:', result.enums?.length || 0);
+    if (result.enums) {
+      result.enums.forEach((e) => {
+        console.log(`  - ${e.name}: ${e.values.length} values`);
+      });
+    }
 
-        // Should find all 7 enums
-        expect(result.enums).toHaveLength(7);
+    // Should find all 7 enums
+    expect(result.enums).toHaveLength(7);
 
-        // Check specific enums
-        const wizardStatus = result.enums?.find(
-            (e) => e.name === 'wizard_status'
-        );
-        expect(wizardStatus).toBeDefined();
-        expect(wizardStatus?.values).toEqual([
-            'active',
-            'suspended',
-            'banned',
-            'inactive',
-        ]);
+    // Check specific enums
+    const wizardStatus = result.enums?.find((e) => e.name === 'wizard_status');
+    expect(wizardStatus).toBeDefined();
+    expect(wizardStatus?.values).toEqual([
+      'active',
+      'suspended',
+      'banned',
+      'inactive',
+    ]);
 
-        const itemRarity = result.enums?.find((e) => e.name === 'item_rarity');
-        expect(itemRarity).toBeDefined();
-        expect(itemRarity?.values).toEqual([
-            'common',
-            'uncommon',
-            'rare',
-            'epic',
-            'legendary',
-            'mythic',
-        ]);
+    const itemRarity = result.enums?.find((e) => e.name === 'item_rarity');
+    expect(itemRarity).toBeDefined();
+    expect(itemRarity?.values).toEqual([
+      'common',
+      'uncommon',
+      'rare',
+      'epic',
+      'legendary',
+      'mythic',
+    ]);
 
-        // Check table parsing
-        console.log('\n=== TABLES FOUND ===');
-        console.log('Count:', result.tables.length);
-        console.log('Names:', result.tables.map((t) => t.name).join(', '));
+    // Check table parsing
+    console.log('\n=== TABLES FOUND ===');
+    console.log('Count:', result.tables.length);
+    console.log('Names:', result.tables.map((t) => t.name).join(', '));
 
-        // Should find all 4 tables
-        expect(result.tables).toHaveLength(4);
-        expect(result.tables.map((t) => t.name).sort()).toEqual([
-            'items',
-            'spells',
-            'wizard',
-            'wizard_account',
-        ]);
+    // Should find all 4 tables
+    expect(result.tables).toHaveLength(4);
+    expect(result.tables.map((t) => t.name).sort()).toEqual([
+      'items',
+      'spells',
+      'wizard',
+      'wizard_account',
+    ]);
 
-        // Check warnings for syntax issues
-        console.log('\n=== WARNINGS ===');
-        console.log('Count:', result.warnings?.length || 0);
-        if (result.warnings) {
-            result.warnings.forEach((w) => {
-                console.log(`  - ${w}`);
-            });
-        }
+    // Check warnings for syntax issues
+    console.log('\n=== WARNINGS ===');
+    console.log('Count:', result.warnings?.length || 0);
+    if (result.warnings) {
+      result.warnings.forEach((w) => {
+        console.log(`  - ${w}`);
+      });
+    }
 
-        // Should have warnings about custom types and parsing failures
-        expect(result.warnings).toBeDefined();
-        expect(result.warnings!.length).toBeGreaterThan(0);
+    // Should have warnings about custom types and parsing failures
+    expect(result.warnings).toBeDefined();
+    expect(result.warnings!.length).toBeGreaterThan(0);
 
-        // Check that the tables with missing spaces in column definitions still got parsed
-        const wizardTable = result.tables.find((t) => t.name === 'wizard');
-        expect(wizardTable).toBeDefined();
+    // Check that the tables with missing spaces in column definitions still got parsed
+    const wizardTable = result.tables.find((t) => t.name === 'wizard');
+    expect(wizardTable).toBeDefined();
 
-        const spellsTable = result.tables.find((t) => t.name === 'spells');
-        expect(spellsTable).toBeDefined();
-    });
+    const spellsTable = result.tables.find((t) => t.name === 'spells');
+    expect(spellsTable).toBeDefined();
+  });
 
-    it('should parse enums used in column definitions even with syntax errors', async () => {
-        const sql = `
+  it('should parse enums used in column definitions even with syntax errors', async () => {
+    const sql = `
 CREATE TYPE "public"."dragon_element" AS ENUM('fire', 'ice', 'lightning', 'poison', 'shadow');
 
 CREATE TABLE "dragons" (
@@ -144,14 +142,14 @@ CREATE TABLE "dragons" (
     "metadata" jsonb DEFAULT '{}'::jsonb
 );`;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        // Enum should be parsed
-        expect(result.enums).toHaveLength(1);
-        expect(result.enums?.[0].name).toBe('dragon_element');
+    // Enum should be parsed
+    expect(result.enums).toHaveLength(1);
+    expect(result.enums?.[0].name).toBe('dragon_element');
 
-        // Table might have issues due to missing space
-        console.log('Tables:', result.tables.length);
-        console.log('Warnings:', result.warnings);
-    });
+    // Table might have issues due to missing space
+    console.log('Tables:', result.tables.length);
+    console.log('Warnings:', result.warnings);
+  });
 });

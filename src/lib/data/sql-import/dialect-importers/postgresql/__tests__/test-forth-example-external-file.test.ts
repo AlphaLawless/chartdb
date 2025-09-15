@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { fromPostgres } from '../postgresql';
 
 describe('Junction Table Parsing - Spell Plans Database', () => {
-    it('should parse all 3 tables (spell_plans, spells, plan_sample_spells) and 2 relationships', async () => {
-        const sql = `-- Spell Plans Database with Enums and Junction Table
+  it('should parse all 3 tables (spell_plans, spells, plan_sample_spells) and 2 relationships', async () => {
+    const sql = `-- Spell Plans Database with Enums and Junction Table
 CREATE TYPE casting_difficulty AS ENUM ('simple', 'moderate', 'complex', 'arcane', 'forbidden');
 CREATE TYPE magic_school AS ENUM ('elemental', 'healing', 'illusion', 'necromancy', 'transmutation');
 CREATE TYPE spell_range AS ENUM ('touch', 'short', 'medium', 'long', 'sight');
@@ -38,45 +38,41 @@ CREATE TABLE plan_sample_spells (
     PRIMARY KEY (spell_plan_id, spell_id)
 );`;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        console.log('Parsing results:');
-        console.log(
-            '- Tables:',
-            result.tables.map((t) => t.name)
-        );
-        console.log('- Table count:', result.tables.length);
-        console.log('- Relationships:', result.relationships.length);
-        console.log('- Enums:', result.enums?.length || 0);
+    console.log('Parsing results:');
+    console.log(
+      '- Tables:',
+      result.tables.map((t) => t.name)
+    );
+    console.log('- Table count:', result.tables.length);
+    console.log('- Relationships:', result.relationships.length);
+    console.log('- Enums:', result.enums?.length || 0);
 
-        // Should have 3 tables
-        expect(result.tables).toHaveLength(3);
+    // Should have 3 tables
+    expect(result.tables).toHaveLength(3);
 
-        // Check table names
-        const tableNames = result.tables.map((t) => t.name).sort();
-        expect(tableNames).toEqual([
-            'plan_sample_spells',
-            'spell_plans',
-            'spells',
-        ]);
+    // Check table names
+    const tableNames = result.tables.map((t) => t.name).sort();
+    expect(tableNames).toEqual(['plan_sample_spells', 'spell_plans', 'spells']);
 
-        // Should have 2 relationships (both from plan_sample_spells)
-        expect(result.relationships).toHaveLength(2);
+    // Should have 2 relationships (both from plan_sample_spells)
+    expect(result.relationships).toHaveLength(2);
 
-        // Check plan_sample_spells specifically
-        const planSampleSpells = result.tables.find(
-            (t) => t.name === 'plan_sample_spells'
-        );
-        expect(planSampleSpells).toBeDefined();
-        expect(planSampleSpells!.columns).toHaveLength(2);
+    // Check plan_sample_spells specifically
+    const planSampleSpells = result.tables.find(
+      (t) => t.name === 'plan_sample_spells'
+    );
+    expect(planSampleSpells).toBeDefined();
+    expect(planSampleSpells!.columns).toHaveLength(2);
 
-        // Should have 5 enum types
-        expect(result.enums).toBeDefined();
-        expect(result.enums).toHaveLength(5);
-    });
+    // Should have 5 enum types
+    expect(result.enums).toBeDefined();
+    expect(result.enums).toHaveLength(5);
+  });
 
-    it('should parse the exact junction table definition', async () => {
-        const sql = `
+  it('should parse the exact junction table definition', async () => {
+    const sql = `
 -- Junction table for showing sample spells on a grimoire's page.
 CREATE TABLE grimoire_sample_spells (
     grimoire_plan_id UUID NOT NULL REFERENCES grimoire_plans(id) ON DELETE CASCADE,
@@ -84,10 +80,10 @@ CREATE TABLE grimoire_sample_spells (
     PRIMARY KEY (grimoire_plan_id, spell_id)
 );`;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(1);
-        expect(result.tables[0].name).toBe('grimoire_sample_spells');
-        expect(result.tables[0].columns).toHaveLength(2);
-    });
+    expect(result.tables).toHaveLength(1);
+    expect(result.tables[0].name).toBe('grimoire_sample_spells');
+    expect(result.tables[0].columns).toHaveLength(2);
+  });
 });

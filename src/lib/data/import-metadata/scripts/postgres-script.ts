@@ -1,78 +1,77 @@
 import { DatabaseClient } from '@/lib/domain/database-clients';
 import {
-    DatabaseEdition,
-    databaseEditionToLabelMap,
+  DatabaseEdition,
+  databaseEditionToLabelMap,
 } from '@/lib/domain/database-edition';
 
 export const getPostgresQuery = (
-    options: {
-        databaseEdition?: DatabaseEdition;
-        databaseClient?: DatabaseClient;
-    } = {}
+  options: {
+    databaseEdition?: DatabaseEdition;
+    databaseClient?: DatabaseClient;
+  } = {}
 ): string => {
-    const databaseEdition: DatabaseEdition | undefined =
-        options.databaseEdition;
-    // Define additional filters based on the database option
-    const supabaseFilters = `
+  const databaseEdition: DatabaseEdition | undefined = options.databaseEdition;
+  // Define additional filters based on the database option
+  const supabaseFilters = `
                 AND connamespace::regnamespace::text NOT IN ('auth', 'extensions', 'pgsodium', 'realtime', 'storage', 'vault')
     `;
 
-    const supabaseColFilter = `
+  const supabaseColFilter = `
                 AND cols.table_schema NOT IN ('auth', 'extensions', 'pgsodium', 'realtime', 'storage', 'vault')
     `;
 
-    const supabaseTableFilter = `
+  const supabaseTableFilter = `
                 AND tbls.table_schema NOT IN ('auth', 'extensions', 'pgsodium', 'realtime', 'storage', 'vault')
     `;
 
-    const supabaseIndexesFilter = `
+  const supabaseIndexesFilter = `
                 WHERE schema_name NOT IN ('auth', 'extensions', 'pgsodium', 'realtime', 'storage', 'vault')
     `;
 
-    const supabaseViewsFilter = `
+  const supabaseViewsFilter = `
                 AND views.schemaname NOT IN ('auth', 'extensions', 'pgsodium', 'realtime', 'storage', 'vault')
     `;
 
-    const supabaseCustomTypesFilter = `
+  const supabaseCustomTypesFilter = `
                 AND n.nspname NOT IN ('auth', 'extensions', 'pgsodium', 'realtime', 'storage', 'vault')
     `;
 
-    const timescaleFilters = `
+  const timescaleFilters = `
                 AND connamespace::regnamespace::text !~ '^(timescaledb_|_timescaledb_)'
     `;
 
-    const timescaleColFilter = `
+  const timescaleColFilter = `
                 AND cols.table_schema !~ '^(timescaledb_|_timescaledb_)'
                 AND cols.table_name !~ '^(pg_stat_)'
     `;
 
-    const timescaleTableFilter = `
+  const timescaleTableFilter = `
                 AND tbls.table_schema !~ '^(timescaledb_|_timescaledb_)'
                 AND tbls.table_name !~ '^(pg_stat_)'
     `;
 
-    const timescaleIndexesFilter = `
+  const timescaleIndexesFilter = `
                 WHERE schema_name !~ '^(timescaledb_|_timescaledb_)'
     `;
 
-    const timescaleViewsFilter = `
+  const timescaleViewsFilter = `
                 AND views.schemaname !~ '^(timescaledb_|_timescaledb_)'
     `;
 
-    const timescaleCustomTypesFilter = `
+  const timescaleCustomTypesFilter = `
                 AND n.nspname !~ '^(timescaledb_|_timescaledb_)'
     `;
 
-    const withExtras = false;
+  const withExtras = false;
 
-    const withDefault = `COALESCE(replace(replace(cols.column_default, '"', '\\"'), '\\x', '\\\\x'), '')`;
-    const withoutDefault = `null`;
+  const withDefault = `COALESCE(replace(replace(cols.column_default, '"', '\\"'), '\\x', '\\\\x'), '')`;
+  const withoutDefault = `null`;
 
-    const withComments = `COALESCE(replace(replace(dsc.description, '"', '\\"'), '\\x', '\\\\x'), '')`;
-    const withoutComments = `null`;
+  const withComments = `COALESCE(replace(replace(dsc.description, '"', '\\"'), '\\x', '\\\\x'), '')`;
+  const withoutComments = `null`;
 
-    // Define the base query
-    const query = `${`/* ${databaseEdition ? databaseEditionToLabelMap[databaseEdition] : 'PostgreSQL'} edition */`}
+  // Define the base query
+  const query = `${`/* ${databaseEdition ? databaseEditionToLabelMap[databaseEdition] : 'PostgreSQL'} edition */`}
 WITH fk_info${databaseEdition ? '_' + databaseEdition : ''} AS (
     SELECT array_to_string(array_agg(CONCAT('{"schema":"', replace(schema_name, '"', ''), '"',
                                             ',"table":"', replace(table_name::text, '"', ''), '"',
@@ -117,12 +116,12 @@ WITH fk_info${databaseEdition ? '_' + databaseEdition : ''} AS (
                 WHERE
                     c.contype = 'f'
                     AND connamespace::regnamespace::text NOT IN ('information_schema', 'pg_catalog')${
-                        databaseEdition === DatabaseEdition.POSTGRESQL_TIMESCALE
-                            ? timescaleFilters
-                            : databaseEdition ===
-                                DatabaseEdition.POSTGRESQL_SUPABASE
-                              ? supabaseFilters
-                              : ''
+                      databaseEdition === DatabaseEdition.POSTGRESQL_TIMESCALE
+                        ? timescaleFilters
+                        : databaseEdition ===
+                            DatabaseEdition.POSTGRESQL_SUPABASE
+                          ? supabaseFilters
+                          : ''
                     }
     ) AS x
 ), pk_info AS (
@@ -145,11 +144,11 @@ WITH fk_info${databaseEdition ? '_' + databaseEdition : ''} AS (
             WHERE
               contype = 'p'
               AND connamespace::regnamespace::text NOT IN ('information_schema', 'pg_catalog')${
-                  databaseEdition === DatabaseEdition.POSTGRESQL_TIMESCALE
-                      ? timescaleFilters
-                      : databaseEdition === DatabaseEdition.POSTGRESQL_SUPABASE
-                        ? supabaseFilters
-                        : ''
+                databaseEdition === DatabaseEdition.POSTGRESQL_TIMESCALE
+                  ? timescaleFilters
+                  : databaseEdition === DatabaseEdition.POSTGRESQL_SUPABASE
+                    ? supabaseFilters
+                    : ''
               }
     ) AS y
 ),
@@ -207,11 +206,11 @@ cols AS (
     LEFT JOIN pg_catalog.pg_type
         ON pg_type.oid = attr.atttypid
     WHERE cols.table_schema NOT IN ('information_schema', 'pg_catalog')${
-        databaseEdition === DatabaseEdition.POSTGRESQL_TIMESCALE
-            ? timescaleColFilter
-            : databaseEdition === DatabaseEdition.POSTGRESQL_SUPABASE
-              ? supabaseColFilter
-              : ''
+      databaseEdition === DatabaseEdition.POSTGRESQL_TIMESCALE
+        ? timescaleColFilter
+        : databaseEdition === DatabaseEdition.POSTGRESQL_SUPABASE
+          ? supabaseColFilter
+          : ''
     }
 ), indexes_metadata AS (
     SELECT array_to_string(array_agg(CONCAT('{"schema":"', schema_name,
@@ -226,11 +225,11 @@ cols AS (
                                             ',"direction":"', LOWER(direction),
                                             '"}')), ',') AS indexes_metadata
     FROM indexes_cols x ${
-        databaseEdition === DatabaseEdition.POSTGRESQL_TIMESCALE
-            ? timescaleIndexesFilter
-            : databaseEdition === DatabaseEdition.POSTGRESQL_SUPABASE
-              ? supabaseIndexesFilter
-              : ''
+      databaseEdition === DatabaseEdition.POSTGRESQL_TIMESCALE
+        ? timescaleIndexesFilter
+        : databaseEdition === DatabaseEdition.POSTGRESQL_SUPABASE
+          ? supabaseIndexesFilter
+          : ''
     }
 ), tbls AS (
     SELECT array_to_string(array_agg(CONCAT('{',
@@ -251,11 +250,11 @@ cols AS (
         LEFT JOIN pg_catalog.pg_description dsc ON dsc.objoid = c.oid
                                                 AND dsc.objsubid = 0
         WHERE tbls.TABLE_SCHEMA NOT IN ('information_schema', 'pg_catalog') ${
-            databaseEdition === DatabaseEdition.POSTGRESQL_TIMESCALE
-                ? timescaleTableFilter
-                : databaseEdition === DatabaseEdition.POSTGRESQL_SUPABASE
-                  ? supabaseTableFilter
-                  : ''
+          databaseEdition === DatabaseEdition.POSTGRESQL_TIMESCALE
+            ? timescaleTableFilter
+            : databaseEdition === DatabaseEdition.POSTGRESQL_SUPABASE
+              ? supabaseTableFilter
+              : ''
         }
 ), config AS (
     SELECT array_to_string(
@@ -269,11 +268,11 @@ cols AS (
                       ',') AS views_metadata
     FROM pg_views views
     WHERE views.schemaname NOT IN ('information_schema', 'pg_catalog') ${
-        databaseEdition === DatabaseEdition.POSTGRESQL_TIMESCALE
-            ? timescaleViewsFilter
-            : databaseEdition === DatabaseEdition.POSTGRESQL_SUPABASE
-              ? supabaseViewsFilter
-              : ''
+      databaseEdition === DatabaseEdition.POSTGRESQL_TIMESCALE
+        ? timescaleViewsFilter
+        : databaseEdition === DatabaseEdition.POSTGRESQL_SUPABASE
+          ? supabaseViewsFilter
+          : ''
     }
 ), custom_types AS (
     SELECT array_to_string(array_agg(type_json), ',') AS custom_types_metadata
@@ -289,11 +288,11 @@ cols AS (
         JOIN pg_enum e ON t.oid = e.enumtypid
         JOIN pg_namespace n ON n.oid = t.typnamespace
         WHERE n.nspname NOT IN ('pg_catalog', 'information_schema') ${
-            databaseEdition === DatabaseEdition.POSTGRESQL_TIMESCALE
-                ? timescaleCustomTypesFilter
-                : databaseEdition === DatabaseEdition.POSTGRESQL_SUPABASE
-                  ? supabaseCustomTypesFilter
-                  : ''
+          databaseEdition === DatabaseEdition.POSTGRESQL_TIMESCALE
+            ? timescaleCustomTypesFilter
+            : databaseEdition === DatabaseEdition.POSTGRESQL_SUPABASE
+              ? supabaseCustomTypesFilter
+              : ''
         }
         GROUP BY n.nspname, t.typname
 
@@ -322,11 +321,11 @@ cols AS (
               AND c.relkind = 'c'  -- ✅ Only user-defined composite types
               AND a.attnum > 0 AND NOT a.attisdropped
               AND n.nspname NOT IN ('pg_catalog', 'information_schema') ${
-                  databaseEdition === DatabaseEdition.POSTGRESQL_TIMESCALE
-                      ? timescaleCustomTypesFilter
-                      : databaseEdition === DatabaseEdition.POSTGRESQL_SUPABASE
-                        ? supabaseCustomTypesFilter
-                        : ''
+                databaseEdition === DatabaseEdition.POSTGRESQL_TIMESCALE
+                  ? timescaleCustomTypesFilter
+                  : databaseEdition === DatabaseEdition.POSTGRESQL_SUPABASE
+                    ? supabaseCustomTypesFilter
+                    : ''
               }
             GROUP BY n.nspname, t.typname
         ) AS comp
@@ -344,13 +343,13 @@ SELECT CONCAT('{    "fk_info": [', COALESCE(fk_metadata, ''),
 FROM fk_info${databaseEdition ? '_' + databaseEdition : ''}, pk_info, cols, indexes_metadata, tbls, config, views, custom_types;
     `;
 
-    const psqlPreCommand = `# *** Remember to change! (HOST_NAME, PORT, USER_NAME, DATABASE_NAME) *** \n`;
+  const psqlPreCommand = `# *** Remember to change! (HOST_NAME, PORT, USER_NAME, DATABASE_NAME) *** \n`;
 
-    if (options.databaseClient === DatabaseClient.POSTGRESQL_PSQL) {
-        return `${psqlPreCommand}psql -h HOST_NAME -p PORT -U USER_NAME -d DATABASE_NAME -c "
+  if (options.databaseClient === DatabaseClient.POSTGRESQL_PSQL) {
+    return `${psqlPreCommand}psql -h HOST_NAME -p PORT -U USER_NAME -d DATABASE_NAME -c "
 ${query.replace(/"/g, '\\"').replace(/\\\\/g, '\\\\\\').replace(/\\x/g, '\\\\x')}
 " -t -A > output.json;`;
-    }
+  }
 
-    return query;
+  return query;
 };

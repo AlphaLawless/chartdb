@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { fromPostgres } from '../postgresql';
 
 describe('PostgreSQL ALTER TABLE with Foreign Keys', () => {
-    it('should handle ALTER TABLE ADD COLUMN followed by ALTER TABLE ADD FOREIGN KEY', async () => {
-        const sql = `
+  it('should handle ALTER TABLE ADD COLUMN followed by ALTER TABLE ADD FOREIGN KEY', async () => {
+    const sql = `
 CREATE SCHEMA IF NOT EXISTS "public";
 
 CREATE TABLE "public"."location" (
@@ -65,53 +65,50 @@ ALTER TABLE location ADD CONSTRAINT fk_location_city
     FOREIGN KEY (city_id) REFERENCES city(id);
         `;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        const locationTable = result.tables.find((t) => t.name === 'location');
+    const locationTable = result.tables.find((t) => t.name === 'location');
 
-        // Check tables
-        expect(result.tables).toHaveLength(5); // location, country, state, location_type, city
+    // Check tables
+    expect(result.tables).toHaveLength(5); // location, country, state, location_type, city
 
-        // Check location table has all columns
-        expect(locationTable).toBeDefined();
-        expect(locationTable?.columns).toHaveLength(16); // id + 15 added columns
+    // Check location table has all columns
+    expect(locationTable).toBeDefined();
+    expect(locationTable?.columns).toHaveLength(16); // id + 15 added columns
 
-        // Check foreign key relationships
-        const locationRelationships = result.relationships.filter(
-            (r) => r.sourceTable === 'location'
-        );
+    // Check foreign key relationships
+    const locationRelationships = result.relationships.filter(
+      (r) => r.sourceTable === 'location'
+    );
 
-        // Should have 4 FKs from location to lookup tables + 2 from state/city
-        expect(result.relationships.length).toBeGreaterThanOrEqual(6);
+    // Should have 4 FKs from location to lookup tables + 2 from state/city
+    expect(result.relationships.length).toBeGreaterThanOrEqual(6);
 
-        // Check specific foreign keys from location
-        expect(
-            locationRelationships.some(
-                (r) =>
-                    r.sourceColumn === 'country_id' &&
-                    r.targetTable === 'country'
-            )
-        ).toBe(true);
+    // Check specific foreign keys from location
+    expect(
+      locationRelationships.some(
+        (r) => r.sourceColumn === 'country_id' && r.targetTable === 'country'
+      )
+    ).toBe(true);
 
-        expect(
-            locationRelationships.some(
-                (r) =>
-                    r.sourceColumn === 'state_id' && r.targetTable === 'state'
-            )
-        ).toBe(true);
+    expect(
+      locationRelationships.some(
+        (r) => r.sourceColumn === 'state_id' && r.targetTable === 'state'
+      )
+    ).toBe(true);
 
-        expect(
-            locationRelationships.some(
-                (r) =>
-                    r.sourceColumn === 'location_type_id' &&
-                    r.targetTable === 'location_type'
-            )
-        ).toBe(true);
+    expect(
+      locationRelationships.some(
+        (r) =>
+          r.sourceColumn === 'location_type_id' &&
+          r.targetTable === 'location_type'
+      )
+    ).toBe(true);
 
-        expect(
-            locationRelationships.some(
-                (r) => r.sourceColumn === 'city_id' && r.targetTable === 'city'
-            )
-        ).toBe(true);
-    });
+    expect(
+      locationRelationships.some(
+        (r) => r.sourceColumn === 'city_id' && r.targetTable === 'city'
+      )
+    ).toBe(true);
+  });
 });

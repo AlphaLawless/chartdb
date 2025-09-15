@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { fromPostgres } from '../postgresql';
 
 describe('PostgreSQL Parser Regression Tests', () => {
-    it('should parse all 16 tables from the magical academy example', async () => {
-        // This is a regression test for the issue where 3 tables were missing
-        const sql = `
+  it('should parse all 16 tables from the magical academy example', async () => {
+    // This is a regression test for the issue where 3 tables were missing
+    const sql = `
 -- Core tables
 CREATE TABLE magic_schools(
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -67,35 +67,35 @@ CREATE TABLE spell_logs(
 );
         `;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        // Should find all 6 tables
-        expect(result.tables).toHaveLength(6);
+    // Should find all 6 tables
+    expect(result.tables).toHaveLength(6);
 
-        const tableNames = result.tables.map((t) => t.name).sort();
-        expect(tableNames).toEqual([
-            'magic_schools',
-            'magical_ranks',
-            'spell_logs',
-            'towers',
-            'wizard_ranks',
-            'wizards',
-        ]);
+    const tableNames = result.tables.map((t) => t.name).sort();
+    expect(tableNames).toEqual([
+      'magic_schools',
+      'magical_ranks',
+      'spell_logs',
+      'towers',
+      'wizard_ranks',
+      'wizards',
+    ]);
 
-        if (result.warnings) {
-            expect(result.warnings.length).toBeGreaterThan(0);
-            expect(
-                result.warnings.some(
-                    (w) => w.includes('Function') || w.includes('security')
-                )
-            ).toBe(true);
-        } else {
-            expect(result.tables).toHaveLength(6);
-        }
-    });
+    if (result.warnings) {
+      expect(result.warnings.length).toBeGreaterThan(0);
+      expect(
+        result.warnings.some(
+          (w) => w.includes('Function') || w.includes('security')
+        )
+      ).toBe(true);
+    } else {
+      expect(result.tables).toHaveLength(6);
+    }
+  });
 
-    it('should handle tables with complex syntax that fail parsing', async () => {
-        const sql = `
+  it('should handle tables with complex syntax that fail parsing', async () => {
+    const sql = `
 CREATE TABLE simple_table (
     id uuid PRIMARY KEY,
     name text NOT NULL
@@ -117,32 +117,32 @@ CREATE TABLE another_table (
 );
         `;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        // Should find all 3 tables even if complex_table fails to parse
-        expect(result.tables).toHaveLength(3);
-        expect(result.tables.map((t) => t.name).sort()).toEqual([
-            'another_table',
-            'complex_table',
-            'simple_table',
-        ]);
+    // Should find all 3 tables even if complex_table fails to parse
+    expect(result.tables).toHaveLength(3);
+    expect(result.tables.map((t) => t.name).sort()).toEqual([
+      'another_table',
+      'complex_table',
+      'simple_table',
+    ]);
 
-        // Should extract foreign keys even from unparsed tables
-        const fksFromAnother = result.relationships.filter(
-            (r) => r.sourceTable === 'another_table'
-        );
-        expect(fksFromAnother).toHaveLength(2);
-        expect(
-            fksFromAnother.some((fk) => fk.targetTable === 'complex_table')
-        ).toBe(true);
-        expect(
-            fksFromAnother.some((fk) => fk.targetTable === 'simple_table')
-        ).toBe(true);
-    });
+    // Should extract foreign keys even from unparsed tables
+    const fksFromAnother = result.relationships.filter(
+      (r) => r.sourceTable === 'another_table'
+    );
+    expect(fksFromAnother).toHaveLength(2);
+    expect(
+      fksFromAnother.some((fk) => fk.targetTable === 'complex_table')
+    ).toBe(true);
+    expect(fksFromAnother.some((fk) => fk.targetTable === 'simple_table')).toBe(
+      true
+    );
+  });
 
-    it('should count relationships correctly for multi-tenant system', async () => {
-        // Simplified version focusing on relationship counting
-        const sql = `
+  it('should count relationships correctly for multi-tenant system', async () => {
+    // Simplified version focusing on relationship counting
+    const sql = `
 CREATE TABLE tenants(id uuid PRIMARY KEY);
 CREATE TABLE branches(
     id uuid PRIMARY KEY,
@@ -182,18 +182,18 @@ CREATE TABLE patients(
 );
         `;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        // Count expected relationships:
-        // branches: 1 (tenant_id -> tenants)
-        // roles: 1 (tenant_id -> tenants)
-        // role_permissions: 2 (role_id -> roles, permission_id -> permissions)
-        // record_types: 1 (tenant_id -> tenants)
-        // users: 2 (tenant_id -> tenants, branch_id -> branches)
-        // user_roles: 3 (user_id -> users, role_id -> roles, branch_id -> branches)
-        // patients: 4 (tenant_id -> tenants, branch_id -> branches, primary_physician -> users, referring_physician -> users)
-        // Total: 14
+    // Count expected relationships:
+    // branches: 1 (tenant_id -> tenants)
+    // roles: 1 (tenant_id -> tenants)
+    // role_permissions: 2 (role_id -> roles, permission_id -> permissions)
+    // record_types: 1 (tenant_id -> tenants)
+    // users: 2 (tenant_id -> tenants, branch_id -> branches)
+    // user_roles: 3 (user_id -> users, role_id -> roles, branch_id -> branches)
+    // patients: 4 (tenant_id -> tenants, branch_id -> branches, primary_physician -> users, referring_physician -> users)
+    // Total: 14
 
-        expect(result.relationships).toHaveLength(14);
-    });
+    expect(result.relationships).toHaveLength(14);
+  });
 });

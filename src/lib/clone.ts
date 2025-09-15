@@ -9,247 +9,241 @@ import type { Diagram } from './domain/diagram';
 import { generateId as defaultGenerateId } from './utils';
 
 const generateIdsMapFromTable = (
-    table: DBTable,
-    generateId: () => string = defaultGenerateId
+  table: DBTable,
+  generateId: () => string = defaultGenerateId
 ): Map<string, string> => {
-    const idsMap = new Map<string, string>();
-    idsMap.set(table.id, generateId());
+  const idsMap = new Map<string, string>();
+  idsMap.set(table.id, generateId());
 
-    table.fields.forEach((field) => {
-        idsMap.set(field.id, generateId());
-    });
+  table.fields.forEach((field) => {
+    idsMap.set(field.id, generateId());
+  });
 
-    table.indexes.forEach((index) => {
-        idsMap.set(index.id, generateId());
-    });
+  table.indexes.forEach((index) => {
+    idsMap.set(index.id, generateId());
+  });
 
-    return idsMap;
+  return idsMap;
 };
 
 const generateIdsMapFromDiagram = (
-    diagram: Diagram,
-    generateId: () => string = defaultGenerateId
+  diagram: Diagram,
+  generateId: () => string = defaultGenerateId
 ): Map<string, string> => {
-    let idsMap = new Map<string, string>();
-    diagram.tables?.forEach((table) => {
-        const tableIdsMap = generateIdsMapFromTable(table, generateId);
+  let idsMap = new Map<string, string>();
+  diagram.tables?.forEach((table) => {
+    const tableIdsMap = generateIdsMapFromTable(table, generateId);
 
-        idsMap = new Map([...idsMap, ...tableIdsMap]);
-    });
+    idsMap = new Map([...idsMap, ...tableIdsMap]);
+  });
 
-    diagram.relationships?.forEach((relationship) => {
-        idsMap.set(relationship.id, generateId());
-    });
+  diagram.relationships?.forEach((relationship) => {
+    idsMap.set(relationship.id, generateId());
+  });
 
-    diagram.dependencies?.forEach((dependency) => {
-        idsMap.set(dependency.id, generateId());
-    });
+  diagram.dependencies?.forEach((dependency) => {
+    idsMap.set(dependency.id, generateId());
+  });
 
-    diagram.areas?.forEach((area) => {
-        idsMap.set(area.id, generateId());
-    });
+  diagram.areas?.forEach((area) => {
+    idsMap.set(area.id, generateId());
+  });
 
-    diagram.customTypes?.forEach((customType) => {
-        idsMap.set(customType.id, generateId());
-    });
+  diagram.customTypes?.forEach((customType) => {
+    idsMap.set(customType.id, generateId());
+  });
 
-    return idsMap;
+  return idsMap;
 };
 
 export const cloneTable = (
-    table: DBTable,
-    options: {
-        generateId: () => string;
-        idsMap: Map<string, string>;
-    } = {
-        generateId: defaultGenerateId,
-        idsMap: new Map<string, string>(),
-    }
+  table: DBTable,
+  options: {
+    generateId: () => string;
+    idsMap: Map<string, string>;
+  } = {
+    generateId: defaultGenerateId,
+    idsMap: new Map<string, string>(),
+  }
 ): DBTable => {
-    const { generateId } = options;
+  const { generateId } = options;
 
-    const idsMap = new Map([
-        ...generateIdsMapFromTable(table, generateId),
-        ...options.idsMap,
-    ]);
+  const idsMap = new Map([
+    ...generateIdsMapFromTable(table, generateId),
+    ...options.idsMap,
+  ]);
 
-    const getNewId = (id: string): string | null => {
-        const newId = idsMap.get(id);
-        if (!newId) {
-            return null;
-        }
-        return newId;
-    };
-
-    const tableId = getNewId(table.id);
-    if (!tableId) {
-        throw new Error('Table id not found');
+  const getNewId = (id: string): string | null => {
+    const newId = idsMap.get(id);
+    if (!newId) {
+      return null;
     }
+    return newId;
+  };
 
-    const newTable: DBTable = { ...table, id: tableId };
-    newTable.fields = table.fields
-        .map((field): DBField | null => {
-            const id = getNewId(field.id);
+  const tableId = getNewId(table.id);
+  if (!tableId) {
+    throw new Error('Table id not found');
+  }
 
-            if (!id) {
-                return null;
-            }
+  const newTable: DBTable = { ...table, id: tableId };
+  newTable.fields = table.fields
+    .map((field): DBField | null => {
+      const id = getNewId(field.id);
 
-            return {
-                ...field,
-                id,
-            };
-        })
-        .filter((field): field is DBField => field !== null);
-    newTable.indexes = table.indexes
-        .map((index): DBIndex | null => {
-            const id = getNewId(index.id);
+      if (!id) {
+        return null;
+      }
 
-            if (!id) {
-                return null;
-            }
+      return {
+        ...field,
+        id,
+      };
+    })
+    .filter((field): field is DBField => field !== null);
+  newTable.indexes = table.indexes
+    .map((index): DBIndex | null => {
+      const id = getNewId(index.id);
 
-            return {
-                ...index,
-                fieldIds: index.fieldIds
-                    .map((id) => getNewId(id))
-                    .filter((fieldId): fieldId is string => fieldId !== null),
-                id,
-            };
-        })
-        .filter((index): index is DBIndex => index !== null);
+      if (!id) {
+        return null;
+      }
 
-    return newTable;
+      return {
+        ...index,
+        fieldIds: index.fieldIds
+          .map((id) => getNewId(id))
+          .filter((fieldId): fieldId is string => fieldId !== null),
+        id,
+      };
+    })
+    .filter((index): index is DBIndex => index !== null);
+
+  return newTable;
 };
 
 export const cloneDiagram = (
-    diagram: Diagram,
-    options: {
-        generateId: () => string;
-    } = {
-        generateId: defaultGenerateId,
-    }
+  diagram: Diagram,
+  options: {
+    generateId: () => string;
+  } = {
+    generateId: defaultGenerateId,
+  }
 ): { diagram: Diagram; idsMap: Map<string, string> } => {
-    const { generateId } = options;
-    const diagramId = generateId();
+  const { generateId } = options;
+  const diagramId = generateId();
 
-    const idsMap = generateIdsMapFromDiagram(diagram, generateId);
+  const idsMap = generateIdsMapFromDiagram(diagram, generateId);
 
-    const getNewId = (id: string): string | null => {
-        const newId = idsMap.get(id);
-        if (!newId) {
-            return null;
+  const getNewId = (id: string): string | null => {
+    const newId = idsMap.get(id);
+    if (!newId) {
+      return null;
+    }
+    return newId;
+  };
+
+  const tables: DBTable[] =
+    diagram.tables?.map((table) => cloneTable(table, { generateId, idsMap })) ??
+    [];
+
+  const relationships: DBRelationship[] =
+    diagram.relationships
+      ?.map((relationship): DBRelationship | null => {
+        const id = getNewId(relationship.id);
+        const sourceTableId = getNewId(relationship.sourceTableId);
+        const targetTableId = getNewId(relationship.targetTableId);
+        const sourceFieldId = getNewId(relationship.sourceFieldId);
+        const targetFieldId = getNewId(relationship.targetFieldId);
+
+        if (
+          !id ||
+          !sourceTableId ||
+          !targetTableId ||
+          !sourceFieldId ||
+          !targetFieldId
+        ) {
+          return null;
         }
-        return newId;
-    };
 
-    const tables: DBTable[] =
-        diagram.tables?.map((table) =>
-            cloneTable(table, { generateId, idsMap })
-        ) ?? [];
+        return {
+          ...relationship,
+          id,
+          sourceTableId,
+          targetTableId,
+          sourceFieldId,
+          targetFieldId,
+        };
+      })
+      .filter(
+        (relationship): relationship is DBRelationship => relationship !== null
+      ) ?? [];
 
-    const relationships: DBRelationship[] =
-        diagram.relationships
-            ?.map((relationship): DBRelationship | null => {
-                const id = getNewId(relationship.id);
-                const sourceTableId = getNewId(relationship.sourceTableId);
-                const targetTableId = getNewId(relationship.targetTableId);
-                const sourceFieldId = getNewId(relationship.sourceFieldId);
-                const targetFieldId = getNewId(relationship.targetFieldId);
+  const dependencies: DBDependency[] =
+    diagram.dependencies
+      ?.map((dependency): DBDependency | null => {
+        const id = getNewId(dependency.id);
+        const dependentTableId = getNewId(dependency.dependentTableId);
+        const tableId = getNewId(dependency.tableId);
 
-                if (
-                    !id ||
-                    !sourceTableId ||
-                    !targetTableId ||
-                    !sourceFieldId ||
-                    !targetFieldId
-                ) {
-                    return null;
-                }
+        if (!id || !dependentTableId || !tableId) {
+          return null;
+        }
 
-                return {
-                    ...relationship,
-                    id,
-                    sourceTableId,
-                    targetTableId,
-                    sourceFieldId,
-                    targetFieldId,
-                };
-            })
-            .filter(
-                (relationship): relationship is DBRelationship =>
-                    relationship !== null
-            ) ?? [];
+        return {
+          ...dependency,
+          id,
+          dependentTableId,
+          tableId,
+        };
+      })
+      .filter(
+        (dependency): dependency is DBDependency => dependency !== null
+      ) ?? [];
 
-    const dependencies: DBDependency[] =
-        diagram.dependencies
-            ?.map((dependency): DBDependency | null => {
-                const id = getNewId(dependency.id);
-                const dependentTableId = getNewId(dependency.dependentTableId);
-                const tableId = getNewId(dependency.tableId);
+  const areas: Area[] =
+    diagram.areas
+      ?.map((area) => {
+        const id = getNewId(area.id);
+        if (!id) {
+          return null;
+        }
 
-                if (!id || !dependentTableId || !tableId) {
-                    return null;
-                }
+        return {
+          ...area,
+          id,
+        } satisfies Area;
+      })
+      .filter((area): area is Area => area !== null) ?? [];
 
-                return {
-                    ...dependency,
-                    id,
-                    dependentTableId,
-                    tableId,
-                };
-            })
-            .filter(
-                (dependency): dependency is DBDependency => dependency !== null
-            ) ?? [];
+  const customTypes: DBCustomType[] =
+    diagram.customTypes
+      ?.map((customType) => {
+        const id = getNewId(customType.id);
+        if (!id) {
+          return null;
+        }
+        return {
+          ...customType,
+          id,
+        } satisfies DBCustomType;
+      })
+      .filter(
+        (customType): customType is DBCustomType => customType !== null
+      ) ?? [];
 
-    const areas: Area[] =
-        diagram.areas
-            ?.map((area) => {
-                const id = getNewId(area.id);
-                if (!id) {
-                    return null;
-                }
-
-                return {
-                    ...area,
-                    id,
-                } satisfies Area;
-            })
-            .filter((area): area is Area => area !== null) ?? [];
-
-    const customTypes: DBCustomType[] =
-        diagram.customTypes
-            ?.map((customType) => {
-                const id = getNewId(customType.id);
-                if (!id) {
-                    return null;
-                }
-                return {
-                    ...customType,
-                    id,
-                } satisfies DBCustomType;
-            })
-            .filter(
-                (customType): customType is DBCustomType => customType !== null
-            ) ?? [];
-
-    return {
-        diagram: {
-            ...diagram,
-            id: diagramId,
-            dependencies,
-            relationships,
-            tables,
-            areas,
-            customTypes,
-            createdAt: diagram.createdAt
-                ? new Date(diagram.createdAt)
-                : new Date(),
-            updatedAt: diagram.updatedAt
-                ? new Date(diagram.updatedAt)
-                : new Date(),
-        },
-        idsMap,
-    };
+  return {
+    diagram: {
+      ...diagram,
+      id: diagramId,
+      dependencies,
+      relationships,
+      tables,
+      areas,
+      customTypes,
+      createdAt: diagram.createdAt ? new Date(diagram.createdAt) : new Date(),
+      updatedAt: diagram.updatedAt ? new Date(diagram.updatedAt) : new Date(),
+    },
+    idsMap,
+  };
 };

@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { fromSQLServer } from '../sqlserver';
 
 describe('SQL Server Fantasy Database Import Tests', () => {
-    it('should parse the magical realm database correctly', async () => {
-        // Fantasy-themed SQL Server database with multiple schemas
-        const sql = `
+  it('should parse the magical realm database correctly', async () => {
+    // Fantasy-themed SQL Server database with multiple schemas
+    const sql = `
             USE [MagicalRealmDB]
             GO
             /****** Object:  Schema [spellcasting]    Script Date: 25.7.2025. 9:42:07 ******/
@@ -361,100 +361,96 @@ describe('SQL Server Fantasy Database Import Tests', () => {
             GO
         `;
 
-        const result = await fromSQLServer(sql);
+    const result = await fromSQLServer(sql);
 
-        // Get unique schemas from parsed tables
-        const foundSchemas = [
-            ...new Set(result.tables.map((t) => t.schema || 'dbo')),
-        ];
+    // Get unique schemas from parsed tables
+    const foundSchemas = [
+      ...new Set(result.tables.map((t) => t.schema || 'dbo')),
+    ];
 
-        // Verify we found tables in multiple schemas
-        expect(foundSchemas.length).toBeGreaterThan(1);
-        expect(foundSchemas).toContain('spellcasting');
-        expect(foundSchemas).toContain('enchantments');
-        expect(foundSchemas).toContain('wizards');
-        expect(foundSchemas).toContain('artifacts');
+    // Verify we found tables in multiple schemas
+    expect(foundSchemas.length).toBeGreaterThan(1);
+    expect(foundSchemas).toContain('spellcasting');
+    expect(foundSchemas).toContain('enchantments');
+    expect(foundSchemas).toContain('wizards');
+    expect(foundSchemas).toContain('artifacts');
 
-        // Check for some specific tables we know should exist
-        expect(
-            result.tables.some(
-                (t) => t.name === 'Spell' && t.schema === 'spellcasting'
-            )
-        ).toBe(true);
-        expect(
-            result.tables.some(
-                (t) => t.name === 'SpellCasting' && t.schema === 'spellcasting'
-            )
-        ).toBe(true);
-        expect(
-            result.tables.some(
-                (t) => t.name === 'Wizard' && t.schema === 'wizards'
-            )
-        ).toBe(true);
+    // Check for some specific tables we know should exist
+    expect(
+      result.tables.some(
+        (t) => t.name === 'Spell' && t.schema === 'spellcasting'
+      )
+    ).toBe(true);
+    expect(
+      result.tables.some(
+        (t) => t.name === 'SpellCasting' && t.schema === 'spellcasting'
+      )
+    ).toBe(true);
+    expect(
+      result.tables.some((t) => t.name === 'Wizard' && t.schema === 'wizards')
+    ).toBe(true);
 
-        // Check data types are handled correctly
-        const spellTable = result.tables.find(
-            (t) => t.name === 'Spell' && t.schema === 'spellcasting'
-        );
-        expect(spellTable).toBeDefined();
+    // Check data types are handled correctly
+    const spellTable = result.tables.find(
+      (t) => t.name === 'Spell' && t.schema === 'spellcasting'
+    );
+    expect(spellTable).toBeDefined();
 
-        if (spellTable) {
-            expect(spellTable.columns.find((c) => c.name === 'Id')?.type).toBe(
-                'uniqueidentifier'
-            );
-            expect(
-                spellTable.columns.find((c) => c.name === 'PowerLevel')?.type
-            ).toBe('decimal');
-            expect(
-                spellTable.columns.find((c) => c.name === 'IsDeleted')?.type
-            ).toBe('bit');
-            expect(
-                spellTable.columns.find((c) => c.name === 'CreatedAt')?.type
-            ).toBe('datetime2');
+    if (spellTable) {
+      expect(spellTable.columns.find((c) => c.name === 'Id')?.type).toBe(
+        'uniqueidentifier'
+      );
+      expect(
+        spellTable.columns.find((c) => c.name === 'PowerLevel')?.type
+      ).toBe('decimal');
+      expect(spellTable.columns.find((c) => c.name === 'IsDeleted')?.type).toBe(
+        'bit'
+      );
+      expect(spellTable.columns.find((c) => c.name === 'CreatedAt')?.type).toBe(
+        'datetime2'
+      );
 
-            // Check nvarchar(max) fields
-            const incantationField = spellTable.columns.find(
-                (c) => c.name === 'Incantation'
-            );
-            expect(incantationField?.type).toBe('nvarchar');
-            expect(incantationField?.typeArgs).toBe('max');
+      // Check nvarchar(max) fields
+      const incantationField = spellTable.columns.find(
+        (c) => c.name === 'Incantation'
+      );
+      expect(incantationField?.type).toBe('nvarchar');
+      expect(incantationField?.typeArgs).toBe('max');
 
-            // Check varchar(max) fields
-            const runicField = spellTable.columns.find(
-                (c) => c.name === 'RunicInscription'
-            );
-            expect(runicField?.type).toBe('varchar');
-            expect(runicField?.typeArgs).toBe('max');
-        }
+      // Check varchar(max) fields
+      const runicField = spellTable.columns.find(
+        (c) => c.name === 'RunicInscription'
+      );
+      expect(runicField?.type).toBe('varchar');
+      expect(runicField?.typeArgs).toBe('max');
+    }
 
-        // Check IDENTITY columns
-        const magicSchoolTable = result.tables.find(
-            (t) => t.name === 'MagicSchool' && t.schema === 'artifacts'
-        );
-        expect(magicSchoolTable).toBeDefined();
-        if (magicSchoolTable) {
-            const idColumn = magicSchoolTable.columns.find(
-                (c) => c.name === 'Id'
-            );
-            expect(idColumn?.increment).toBe(true);
-            expect(idColumn?.type).toBe('int');
-        }
+    // Check IDENTITY columns
+    const magicSchoolTable = result.tables.find(
+      (t) => t.name === 'MagicSchool' && t.schema === 'artifacts'
+    );
+    expect(magicSchoolTable).toBeDefined();
+    if (magicSchoolTable) {
+      const idColumn = magicSchoolTable.columns.find((c) => c.name === 'Id');
+      expect(idColumn?.increment).toBe(true);
+      expect(idColumn?.type).toBe('int');
+    }
 
-        // Check unique constraints converted to indexes
-        const wizardTable = result.tables.find(
-            (t) => t.name === 'Wizard' && t.schema === 'wizards'
-        );
-        expect(wizardTable).toBeDefined();
-        if (wizardTable) {
-            expect(wizardTable.indexes).toHaveLength(1);
-            expect(wizardTable.indexes[0].unique).toBe(true);
-            expect(wizardTable.indexes[0].columns).toContain('HelpId');
-            expect(wizardTable.indexes[0].name).toBe('AK_Wizard_HelpId');
-        }
-    });
+    // Check unique constraints converted to indexes
+    const wizardTable = result.tables.find(
+      (t) => t.name === 'Wizard' && t.schema === 'wizards'
+    );
+    expect(wizardTable).toBeDefined();
+    if (wizardTable) {
+      expect(wizardTable.indexes).toHaveLength(1);
+      expect(wizardTable.indexes[0].unique).toBe(true);
+      expect(wizardTable.indexes[0].columns).toContain('HelpId');
+      expect(wizardTable.indexes[0].name).toBe('AK_Wizard_HelpId');
+    }
+  });
 
-    it('should handle ALTER TABLE ADD CONSTRAINT statements for magical artifacts', async () => {
-        const sql = `
+  it('should handle ALTER TABLE ADD CONSTRAINT statements for magical artifacts', async () => {
+    const sql = `
             CREATE TABLE [artifacts].[MagicalArtifact] (
                 [Id] [uniqueidentifier] NOT NULL PRIMARY KEY,
                 [Name] [nvarchar](255) NOT NULL,
@@ -479,33 +475,33 @@ describe('SQL Server Fantasy Database Import Tests', () => {
                 REFERENCES [artifacts].[MagicalArtifact]([Id]);
         `;
 
-        const result = await fromSQLServer(sql);
+    const result = await fromSQLServer(sql);
 
-        expect(result.tables).toHaveLength(2);
-        expect(result.relationships).toHaveLength(2);
+    expect(result.tables).toHaveLength(2);
+    expect(result.relationships).toHaveLength(2);
 
-        // Check both foreign keys were parsed
-        const primaryRel = result.relationships.find(
-            (r) =>
-                r.sourceColumn === 'PrimaryArtifactId' &&
-                r.name === 'FK_ArtifactEnchantment_Primary'
-        );
-        expect(primaryRel).toBeDefined();
-        expect(primaryRel?.sourceTable).toBe('ArtifactEnchantment');
-        expect(primaryRel?.targetTable).toBe('MagicalArtifact');
+    // Check both foreign keys were parsed
+    const primaryRel = result.relationships.find(
+      (r) =>
+        r.sourceColumn === 'PrimaryArtifactId' &&
+        r.name === 'FK_ArtifactEnchantment_Primary'
+    );
+    expect(primaryRel).toBeDefined();
+    expect(primaryRel?.sourceTable).toBe('ArtifactEnchantment');
+    expect(primaryRel?.targetTable).toBe('MagicalArtifact');
 
-        const secondaryRel = result.relationships.find(
-            (r) =>
-                r.sourceColumn === 'SecondaryArtifactId' &&
-                r.name === 'FK_ArtifactEnchantment_Secondary'
-        );
-        expect(secondaryRel).toBeDefined();
-        expect(secondaryRel?.sourceTable).toBe('ArtifactEnchantment');
-        expect(secondaryRel?.targetTable).toBe('MagicalArtifact');
-    });
+    const secondaryRel = result.relationships.find(
+      (r) =>
+        r.sourceColumn === 'SecondaryArtifactId' &&
+        r.name === 'FK_ArtifactEnchantment_Secondary'
+    );
+    expect(secondaryRel).toBeDefined();
+    expect(secondaryRel?.sourceTable).toBe('ArtifactEnchantment');
+    expect(secondaryRel?.targetTable).toBe('MagicalArtifact');
+  });
 
-    it('should handle tables with many columns including nvarchar(max)', async () => {
-        const sql = `
+  it('should handle tables with many columns including nvarchar(max)', async () => {
+    const sql = `
             CREATE TABLE [wizards].[SpellResearchEnvironment](
                 [Id] [uniqueidentifier] NOT NULL,
                 [HelpId] [uniqueidentifier] NOT NULL,
@@ -549,37 +545,35 @@ describe('SQL Server Fantasy Database Import Tests', () => {
             );
         `;
 
-        const result = await fromSQLServer(sql);
+    const result = await fromSQLServer(sql);
 
-        expect(result.tables).toHaveLength(1);
-        const table = result.tables[0];
+    expect(result.tables).toHaveLength(1);
+    const table = result.tables[0];
 
-        // Should have all columns
-        expect(table.columns.length).toBeGreaterThan(30);
+    // Should have all columns
+    expect(table.columns.length).toBeGreaterThan(30);
 
-        // Check nvarchar(max) handling
-        expect(
-            table.columns.find((c) => c.name === 'CreatedByUsername')?.type
-        ).toBe('nvarchar');
+    // Check nvarchar(max) handling
+    expect(
+      table.columns.find((c) => c.name === 'CreatedByUsername')?.type
+    ).toBe('nvarchar');
 
-        // Check decimal precision handling
-        const decimalColumn = table.columns.find(
-            (c) => c.name === 'ManaLevelStart'
-        );
-        expect(decimalColumn?.type).toBe('decimal');
-        expect(decimalColumn?.typeArgs).toEqual([18, 2]);
+    // Check decimal precision handling
+    const decimalColumn = table.columns.find(
+      (c) => c.name === 'ManaLevelStart'
+    );
+    expect(decimalColumn?.type).toBe('decimal');
+    expect(decimalColumn?.typeArgs).toEqual([18, 2]);
 
-        // Check unique constraint was converted to index
-        expect(table.indexes).toHaveLength(1);
-        expect(table.indexes[0].name).toBe(
-            'AK_SpellResearchEnvironment_HelpId'
-        );
-        expect(table.indexes[0].unique).toBe(true);
-        expect(table.indexes[0].columns).toContain('HelpId');
-    });
+    // Check unique constraint was converted to index
+    expect(table.indexes).toHaveLength(1);
+    expect(table.indexes[0].name).toBe('AK_SpellResearchEnvironment_HelpId');
+    expect(table.indexes[0].unique).toBe(true);
+    expect(table.indexes[0].columns).toContain('HelpId');
+  });
 
-    it('should handle complex decimal types like decimal(31, 15)', async () => {
-        const sql = `
+  it('should handle complex decimal types like decimal(31, 15)', async () => {
+    const sql = `
             CREATE TABLE [artifacts].[RelicPowerCalculatedValues](
                 [Id] [uniqueidentifier] NOT NULL,
                 [MagicalEnergyMeasured] [decimal](31, 15) NOT NULL,
@@ -594,21 +588,21 @@ describe('SQL Server Fantasy Database Import Tests', () => {
             );
         `;
 
-        const result = await fromSQLServer(sql);
+    const result = await fromSQLServer(sql);
 
-        expect(result.tables).toHaveLength(1);
-        const table = result.tables[0];
+    expect(result.tables).toHaveLength(1);
+    const table = result.tables[0];
 
-        // Check high precision decimal handling
-        const magicalEnergyColumn = table.columns.find(
-            (c) => c.name === 'MagicalEnergyMeasured'
-        );
-        expect(magicalEnergyColumn?.type).toBe('decimal');
-        expect(magicalEnergyColumn?.typeArgs).toEqual([31, 15]);
-    });
+    // Check high precision decimal handling
+    const magicalEnergyColumn = table.columns.find(
+      (c) => c.name === 'MagicalEnergyMeasured'
+    );
+    expect(magicalEnergyColumn?.type).toBe('decimal');
+    expect(magicalEnergyColumn?.typeArgs).toEqual([31, 15]);
+  });
 
-    it('should handle IDENTITY columns in artifact lookup tables', async () => {
-        const sql = `
+  it('should handle IDENTITY columns in artifact lookup tables', async () => {
+    const sql = `
             CREATE TABLE [artifacts].[SpellComponent](
                 [Id] [int] IDENTITY(1,1) NOT NULL,
                 [IsDeleted] [bit] NOT NULL,
@@ -628,20 +622,20 @@ describe('SQL Server Fantasy Database Import Tests', () => {
             );
         `;
 
-        const result = await fromSQLServer(sql);
+    const result = await fromSQLServer(sql);
 
-        expect(result.tables).toHaveLength(2);
+    expect(result.tables).toHaveLength(2);
 
-        // Both tables should have IDENTITY columns
-        result.tables.forEach((table) => {
-            const idColumn = table.columns.find((c) => c.name === 'Id');
-            expect(idColumn?.increment).toBe(true);
-            expect(idColumn?.type).toBe('int');
-        });
+    // Both tables should have IDENTITY columns
+    result.tables.forEach((table) => {
+      const idColumn = table.columns.find((c) => c.name === 'Id');
+      expect(idColumn?.increment).toBe(true);
+      expect(idColumn?.type).toBe('int');
     });
+  });
 
-    it('should parse all table constraints with complex WITH options', async () => {
-        const sql = `
+  it('should parse all table constraints with complex WITH options', async () => {
+    const sql = `
             CREATE TABLE [dbo].[MagicalRegistry](
                 [Id] [uniqueidentifier] NOT NULL,
                 [RegistrationCode] [nvarchar](50) NOT NULL,
@@ -657,19 +651,17 @@ describe('SQL Server Fantasy Database Import Tests', () => {
             ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
         `;
 
-        const result = await fromSQLServer(sql);
+    const result = await fromSQLServer(sql);
 
-        expect(result.tables).toHaveLength(1);
-        const table = result.tables[0];
+    expect(result.tables).toHaveLength(1);
+    const table = result.tables[0];
 
-        // Primary key should be set
-        expect(table.columns.find((c) => c.name === 'Id')?.primaryKey).toBe(
-            true
-        );
+    // Primary key should be set
+    expect(table.columns.find((c) => c.name === 'Id')?.primaryKey).toBe(true);
 
-        // Unique constraint should be converted to index
-        expect(table.indexes).toHaveLength(1);
-        expect(table.indexes[0].unique).toBe(true);
-        expect(table.indexes[0].columns).toContain('RegistrationCode');
-    });
+    // Unique constraint should be converted to index
+    expect(table.indexes).toHaveLength(1);
+    expect(table.indexes[0].unique).toBe(true);
+    expect(table.indexes[0].columns).toContain('RegistrationCode');
+  });
 });

@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { fromPostgres } from '../postgresql';
 
 describe('junction table parsing fix', () => {
-    it('should parse table with single-line comment before CREATE TABLE', async () => {
-        const sql = `
+  it('should parse table with single-line comment before CREATE TABLE', async () => {
+    const sql = `
 -- Junction table for tracking which wizards have learned which spells.
 CREATE TABLE wizard_spellbook (
     wizard_id UUID NOT NULL REFERENCES wizards(id) ON DELETE CASCADE,
@@ -11,17 +11,17 @@ CREATE TABLE wizard_spellbook (
     PRIMARY KEY (wizard_id, spell_id)
 );`;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(1);
-        expect(result.tables[0].name).toBe('wizard_spellbook');
-        expect(result.tables[0].columns).toHaveLength(2);
-        expect(result.tables[0].columns[0].name).toBe('wizard_id');
-        expect(result.tables[0].columns[1].name).toBe('spell_id');
-    });
+    expect(result.tables).toHaveLength(1);
+    expect(result.tables[0].name).toBe('wizard_spellbook');
+    expect(result.tables[0].columns).toHaveLength(2);
+    expect(result.tables[0].columns[0].name).toBe('wizard_id');
+    expect(result.tables[0].columns[1].name).toBe('spell_id');
+  });
 
-    it('should handle multiple tables with comments', async () => {
-        const sql = `
+  it('should handle multiple tables with comments', async () => {
+    const sql = `
 -- First table
 CREATE TABLE mages (
     id UUID PRIMARY KEY
@@ -43,27 +43,27 @@ CREATE TABLE enchantments (
     id UUID PRIMARY KEY
 );`;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(4);
-        const tableNames = result.tables.map((t) => t.name).sort();
-        expect(tableNames).toEqual([
-            'enchantments',
-            'grimoires',
-            'mage_grimoires',
-            'mages',
-        ]);
+    expect(result.tables).toHaveLength(4);
+    const tableNames = result.tables.map((t) => t.name).sort();
+    expect(tableNames).toEqual([
+      'enchantments',
+      'grimoires',
+      'mage_grimoires',
+      'mages',
+    ]);
 
-        // Verify mage_grimoires specifically
-        const mageGrimoires = result.tables.find(
-            (t) => t.name === 'mage_grimoires'
-        );
-        expect(mageGrimoires).toBeDefined();
-        expect(mageGrimoires?.columns).toHaveLength(2);
-    });
+    // Verify mage_grimoires specifically
+    const mageGrimoires = result.tables.find(
+      (t) => t.name === 'mage_grimoires'
+    );
+    expect(mageGrimoires).toBeDefined();
+    expect(mageGrimoires?.columns).toHaveLength(2);
+  });
 
-    it('should handle statements that start with comment but include CREATE TABLE', async () => {
-        const sql = `
+  it('should handle statements that start with comment but include CREATE TABLE', async () => {
+    const sql = `
 -- This comment mentions CREATE TABLE artifacts in the comment
 -- but it's just a comment
 ;
@@ -78,18 +78,15 @@ CREATE TABLE artifact_enchantments (
     enchantment_id INTEGER
 );`;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(2);
-        const tableNames = result.tables.map((t) => t.name).sort();
-        expect(tableNames).toEqual([
-            'artifact_enchantments',
-            'mystical_artifacts',
-        ]);
-    });
+    expect(result.tables).toHaveLength(2);
+    const tableNames = result.tables.map((t) => t.name).sort();
+    expect(tableNames).toEqual(['artifact_enchantments', 'mystical_artifacts']);
+  });
 
-    it('should parse all three tables including junction table', async () => {
-        const sql = `
+  it('should parse all three tables including junction table', async () => {
+    const sql = `
 CREATE TABLE spell_categories (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(100) NOT NULL,
@@ -110,25 +107,25 @@ CREATE TABLE spell_categorization (
     PRIMARY KEY (category_id, spell_id)
 );`;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(3);
-        const tableNames = result.tables.map((t) => t.name).sort();
-        expect(tableNames).toEqual([
-            'arcane_spells',
-            'spell_categories',
-            'spell_categorization',
-        ]);
+    expect(result.tables).toHaveLength(3);
+    const tableNames = result.tables.map((t) => t.name).sort();
+    expect(tableNames).toEqual([
+      'arcane_spells',
+      'spell_categories',
+      'spell_categorization',
+    ]);
 
-        // Check the junction table exists and has correct structure
-        const spellCategorization = result.tables.find(
-            (t) => t.name === 'spell_categorization'
-        );
-        expect(spellCategorization).toBeDefined();
-        expect(spellCategorization!.columns).toHaveLength(2);
-        expect(spellCategorization!.columns.map((c) => c.name).sort()).toEqual([
-            'category_id',
-            'spell_id',
-        ]);
-    });
+    // Check the junction table exists and has correct structure
+    const spellCategorization = result.tables.find(
+      (t) => t.name === 'spell_categorization'
+    );
+    expect(spellCategorization).toBeDefined();
+    expect(spellCategorization!.columns).toHaveLength(2);
+    expect(spellCategorization!.columns.map((c) => c.name).sort()).toEqual([
+      'category_id',
+      'spell_id',
+    ]);
+  });
 });

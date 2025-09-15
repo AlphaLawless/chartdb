@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { fromPostgres } from '../postgresql';
 
 describe('PostgreSQL Quest Management Database', () => {
-    it('should parse the magical quest management database', async () => {
-        const sql = `-- Quest Management System Database
+  it('should parse the magical quest management database', async () => {
+    const sql = `-- Quest Management System Database
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -181,78 +181,74 @@ CREATE TABLE guild_master_actions (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );`;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        // Should parse tables despite extensions and custom types
-        expect(result.tables.length).toBeGreaterThan(0);
+    // Should parse tables despite extensions and custom types
+    expect(result.tables.length).toBeGreaterThan(0);
 
-        // Should have warnings about unsupported features
-        expect(result.warnings).toBeDefined();
-        expect(
-            result.warnings!.some(
-                (w) => w.includes('Extension') || w.includes('type')
-            )
-        ).toBe(true);
+    // Should have warnings about unsupported features
+    expect(result.warnings).toBeDefined();
+    expect(
+      result.warnings!.some(
+        (w) => w.includes('Extension') || w.includes('type')
+      )
+    ).toBe(true);
 
-        // Should have parsed all 20 tables
-        expect(result.tables).toHaveLength(20);
+    // Should have parsed all 20 tables
+    expect(result.tables).toHaveLength(20);
 
-        const tableNames = result.tables.map((t) => t.name).sort();
-        const expectedTables = [
-            'adventurers',
-            'guild_masters',
-            'regions',
-            'outposts',
-            'scouts',
-            'scout_region_assignments',
-            'quest_givers',
-            'quest_templates',
-            'quests',
-            'rewards',
-            'quest_sample_rewards',
-            'quest_rotations',
-            'rotation_quests',
-            'contracts',
-            'completion_events',
-            'bounties',
-            'guild_ledgers',
-            'reputation_logs',
-            'quest_suspensions',
-            'guild_master_actions',
-        ];
-        expect(tableNames).toEqual(expectedTables.sort());
+    const tableNames = result.tables.map((t) => t.name).sort();
+    const expectedTables = [
+      'adventurers',
+      'guild_masters',
+      'regions',
+      'outposts',
+      'scouts',
+      'scout_region_assignments',
+      'quest_givers',
+      'quest_templates',
+      'quests',
+      'rewards',
+      'quest_sample_rewards',
+      'quest_rotations',
+      'rotation_quests',
+      'contracts',
+      'completion_events',
+      'bounties',
+      'guild_ledgers',
+      'reputation_logs',
+      'quest_suspensions',
+      'guild_master_actions',
+    ];
+    expect(tableNames).toEqual(expectedTables.sort());
 
-        // Check that enum types were parsed
-        expect(result.enums).toBeDefined();
-        expect(result.enums!.length).toBe(5);
+    // Check that enum types were parsed
+    expect(result.enums).toBeDefined();
+    expect(result.enums!.length).toBe(5);
 
-        // Check specific enums
-        const questStatus = result.enums!.find(
-            (e) => e.name === 'quest_status'
-        );
-        expect(questStatus).toBeDefined();
-        expect(questStatus!.values).toEqual([
-            'draft',
-            'active',
-            'on_hold',
-            'completed',
-            'abandoned',
-        ]);
+    // Check specific enums
+    const questStatus = result.enums!.find((e) => e.name === 'quest_status');
+    expect(questStatus).toBeDefined();
+    expect(questStatus!.values).toEqual([
+      'draft',
+      'active',
+      'on_hold',
+      'completed',
+      'abandoned',
+    ]);
 
-        // Check that custom enum types are handled in columns
-        const contractsTable = result.tables.find(
-            (t) => t.name === 'contracts'
-        );
-        expect(contractsTable).toBeDefined();
-        const statusColumn = contractsTable!.columns.find(
-            (c) => c.name === 'status'
-        );
-        expect(statusColumn).toBeDefined();
-        expect(statusColumn?.type).toMatch(/quest_status/i);
+    // Check that custom enum types are handled in columns
+    const contractsTable = result.tables.find((t) => t.name === 'contracts');
+    expect(contractsTable).toBeDefined();
+    const statusColumn = contractsTable!.columns.find(
+      (c) => c.name === 'status'
+    );
+    expect(statusColumn).toBeDefined();
+    expect(statusColumn?.type).toMatch(/quest_status/i);
 
-        // Verify foreign keys are still extracted
-        if (result.tables.length > 3) {
-            expect(result.relationships.length).toBeGreaterThan(0);
-        }
-    });
+    // Verify foreign keys are still extracted
+    if (result.tables.length > 3) {
+      expect(result.relationships.length).toBeGreaterThan(0);
+    }
+  });
 });

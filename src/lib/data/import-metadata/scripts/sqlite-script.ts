@@ -1,5 +1,5 @@
-import { DatabaseEdition } from '@/lib/domain/database-edition';
 import { DatabaseClient } from '@/lib/domain/database-clients';
+import { DatabaseEdition } from '@/lib/domain/database-edition';
 
 const withExtras = true;
 
@@ -350,7 +350,7 @@ replace(replace(replace(
 
 // Generate Wrangler CLI command wrapper around the D1 query
 const generateWranglerCommand = (): string => {
-    return `# Cloudflare D1 (via Wrangler CLI) Import Script
+  return `# Cloudflare D1 (via Wrangler CLI) Import Script
 # ------------------------------------------------------
 # This query will extract your D1 database schema using Cloudflare's Wrangler CLI
 #
@@ -373,24 +373,24 @@ wrangler d1 execute YOUR_DB_NAME --command $'WITH fk_info AS (  SELECT json_grou
 };
 
 export const getSQLiteQuery = (
-    options: {
-        databaseEdition?: DatabaseEdition;
-        databaseClient?: DatabaseClient;
-    } = {}
+  options: {
+    databaseEdition?: DatabaseEdition;
+    databaseClient?: DatabaseClient;
+  } = {}
 ): string => {
-    // For Cloudflare D1 edition, return the D1 script
-    if (options.databaseEdition === DatabaseEdition.SQLITE_CLOUDFLARE_D1) {
-        // Generate the Wrangler CLI command based on client
-        const isWranglerClient =
-            options?.databaseClient === DatabaseClient.SQLITE_WRANGLER;
+  // For Cloudflare D1 edition, return the D1 script
+  if (options.databaseEdition === DatabaseEdition.SQLITE_CLOUDFLARE_D1) {
+    // Generate the Wrangler CLI command based on client
+    const isWranglerClient =
+      options?.databaseClient === DatabaseClient.SQLITE_WRANGLER;
 
-        if (isWranglerClient) {
-            return generateWranglerCommand();
-        }
-
-        return cloudflareD1Query;
+    if (isWranglerClient) {
+      return generateWranglerCommand();
     }
 
-    // Default SQLite script
-    return sqliteQuery;
+    return cloudflareD1Query;
+  }
+
+  // Default SQLite script
+  return sqliteQuery;
 };

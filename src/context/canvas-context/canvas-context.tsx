@@ -1,38 +1,38 @@
 import { createContext } from 'react';
-import { emptyFn } from '@/lib/utils';
 import type { Graph } from '@/lib/graph';
 import { createGraph } from '@/lib/graph';
+import { emptyFn } from '@/lib/utils';
 
 export interface CanvasContext {
-    reorderTables: (options?: { updateHistory?: boolean }) => void;
-    fitView: (options?: {
-        duration?: number;
-        padding?: number;
-        maxZoom?: number;
-    }) => void;
-    setOverlapGraph: (graph: Graph<string>) => void;
-    overlapGraph: Graph<string>;
-    setShowFilter: React.Dispatch<React.SetStateAction<boolean>>;
-    showFilter: boolean;
-    editTableModeTable: {
-        tableId: string;
-        fieldId?: string;
-    } | null;
-    setEditTableModeTable: React.Dispatch<
-        React.SetStateAction<{
-            tableId: string;
-            fieldId?: string;
-        } | null>
-    >;
+  reorderTables: (options?: { updateHistory?: boolean }) => void;
+  fitView: (options?: {
+    duration?: number;
+    padding?: number;
+    maxZoom?: number;
+  }) => void;
+  setOverlapGraph: (graph: Graph<string>) => void;
+  overlapGraph: Graph<string>;
+  setShowFilter: React.Dispatch<React.SetStateAction<boolean>>;
+  showFilter: boolean;
+  editTableModeTable: {
+    tableId: string;
+    fieldId?: string;
+  } | null;
+  setEditTableModeTable: React.Dispatch<
+    React.SetStateAction<{
+      tableId: string;
+      fieldId?: string;
+    } | null>
+  >;
 }
 
 export const canvasContext = createContext<CanvasContext>({
-    reorderTables: emptyFn,
-    fitView: emptyFn,
-    setOverlapGraph: emptyFn,
-    overlapGraph: createGraph(),
-    setShowFilter: emptyFn,
-    showFilter: false,
-    editTableModeTable: null,
-    setEditTableModeTable: emptyFn,
+  reorderTables: emptyFn,
+  fitView: emptyFn,
+  setOverlapGraph: emptyFn,
+  overlapGraph: createGraph(),
+  setShowFilter: emptyFn,
+  showFilter: false,
+  editTableModeTable: null,
+  setEditTableModeTable: emptyFn,
 });

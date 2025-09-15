@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { fromSQLServer } from '../sqlserver';
 
 describe('SQL Server Foreign Key Relationship Tests', () => {
-    it('should properly link foreign key relationships with correct table IDs', async () => {
-        const sql = `
+  it('should properly link foreign key relationships with correct table IDs', async () => {
+    const sql = `
             CREATE TABLE [magic].[schools] (
                 [id] [uniqueidentifier] PRIMARY KEY,
                 [name] [nvarchar](100) NOT NULL
@@ -19,34 +19,34 @@ describe('SQL Server Foreign Key Relationship Tests', () => {
             FOREIGN KEY ([school_id]) REFERENCES [magic].[schools]([id]);
         `;
 
-        const result = await fromSQLServer(sql);
+    const result = await fromSQLServer(sql);
 
-        // Check tables are parsed
-        expect(result.tables).toHaveLength(2);
-        const schoolsTable = result.tables.find((t) => t.name === 'schools');
-        const wizardsTable = result.tables.find((t) => t.name === 'wizards');
-        expect(schoolsTable).toBeDefined();
-        expect(wizardsTable).toBeDefined();
+    // Check tables are parsed
+    expect(result.tables).toHaveLength(2);
+    const schoolsTable = result.tables.find((t) => t.name === 'schools');
+    const wizardsTable = result.tables.find((t) => t.name === 'wizards');
+    expect(schoolsTable).toBeDefined();
+    expect(wizardsTable).toBeDefined();
 
-        // Check relationship is parsed
-        expect(result.relationships).toHaveLength(1);
-        const rel = result.relationships[0];
+    // Check relationship is parsed
+    expect(result.relationships).toHaveLength(1);
+    const rel = result.relationships[0];
 
-        // Verify the relationship has proper table IDs
-        expect(rel.sourceTableId).toBe(wizardsTable!.id);
-        expect(rel.targetTableId).toBe(schoolsTable!.id);
+    // Verify the relationship has proper table IDs
+    expect(rel.sourceTableId).toBe(wizardsTable!.id);
+    expect(rel.targetTableId).toBe(schoolsTable!.id);
 
-        // Verify other relationship properties
-        expect(rel.sourceTable).toBe('wizards');
-        expect(rel.targetTable).toBe('schools');
-        expect(rel.sourceColumn).toBe('school_id');
-        expect(rel.targetColumn).toBe('id');
-        expect(rel.sourceSchema).toBe('magic');
-        expect(rel.targetSchema).toBe('magic');
-    });
+    // Verify other relationship properties
+    expect(rel.sourceTable).toBe('wizards');
+    expect(rel.targetTable).toBe('schools');
+    expect(rel.sourceColumn).toBe('school_id');
+    expect(rel.targetColumn).toBe('id');
+    expect(rel.sourceSchema).toBe('magic');
+    expect(rel.targetSchema).toBe('magic');
+  });
 
-    it('should handle cross-schema foreign key relationships', async () => {
-        const sql = `
+  it('should handle cross-schema foreign key relationships', async () => {
+    const sql = `
             CREATE TABLE [users].[accounts] (
                 [id] [int] PRIMARY KEY,
                 [username] [nvarchar](50) NOT NULL
@@ -61,27 +61,27 @@ describe('SQL Server Foreign Key Relationship Tests', () => {
             FOREIGN KEY ([account_id]) REFERENCES [users].[accounts]([id]);
         `;
 
-        const result = await fromSQLServer(sql);
+    const result = await fromSQLServer(sql);
 
-        expect(result.tables).toHaveLength(2);
-        expect(result.relationships).toHaveLength(1);
+    expect(result.tables).toHaveLength(2);
+    expect(result.relationships).toHaveLength(1);
 
-        const rel = result.relationships[0];
-        const accountsTable = result.tables.find(
-            (t) => t.name === 'accounts' && t.schema === 'users'
-        );
-        const purchasesTable = result.tables.find(
-            (t) => t.name === 'purchases' && t.schema === 'orders'
-        );
+    const rel = result.relationships[0];
+    const accountsTable = result.tables.find(
+      (t) => t.name === 'accounts' && t.schema === 'users'
+    );
+    const purchasesTable = result.tables.find(
+      (t) => t.name === 'purchases' && t.schema === 'orders'
+    );
 
-        // Verify cross-schema relationship IDs are properly linked
-        expect(rel.sourceTableId).toBe(purchasesTable!.id);
-        expect(rel.targetTableId).toBe(accountsTable!.id);
-    });
+    // Verify cross-schema relationship IDs are properly linked
+    expect(rel.sourceTableId).toBe(purchasesTable!.id);
+    expect(rel.targetTableId).toBe(accountsTable!.id);
+  });
 
-    it('should parse complex foreign keys from magical realm database with proper table IDs', async () => {
-        // Fantasy-themed SQL with multiple schemas and relationships
-        const sql = `
+  it('should parse complex foreign keys from magical realm database with proper table IDs', async () => {
+    // Fantasy-themed SQL with multiple schemas and relationships
+    const sql = `
             -- Spell casting schema
             CREATE SCHEMA [spellcasting];
             GO
@@ -162,92 +162,86 @@ describe('SQL Server Foreign Key Relationship Tests', () => {
             GO
         `;
 
-        const result = await fromSQLServer(sql);
+    const result = await fromSQLServer(sql);
 
-        // Debug output
-        console.log('Total tables:', result.tables.length);
-        console.log('Total relationships:', result.relationships.length);
+    // Debug output
+    console.log('Total tables:', result.tables.length);
+    console.log('Total relationships:', result.relationships.length);
 
-        // Check if we have the expected number of tables and relationships
-        expect(result.tables).toHaveLength(4);
-        expect(result.relationships).toHaveLength(4);
+    // Check if we have the expected number of tables and relationships
+    expect(result.tables).toHaveLength(4);
+    expect(result.relationships).toHaveLength(4);
 
-        // Check a specific relationship we know should exist
-        const spellCastingRel = result.relationships.find(
-            (r) =>
-                r.sourceTable === 'SpellCastingProcess' &&
-                r.targetTable === 'Spell' &&
-                r.sourceColumn === 'SpellId'
-        );
+    // Check a specific relationship we know should exist
+    const spellCastingRel = result.relationships.find(
+      (r) =>
+        r.sourceTable === 'SpellCastingProcess' &&
+        r.targetTable === 'Spell' &&
+        r.sourceColumn === 'SpellId'
+    );
 
-        expect(spellCastingRel).toBeDefined();
+    expect(spellCastingRel).toBeDefined();
 
-        if (spellCastingRel) {
-            // Find the corresponding tables
-            const spellTable = result.tables.find(
-                (t) => t.name === 'Spell' && t.schema === 'spellcasting'
-            );
-            const spellCastingProcessTable = result.tables.find(
-                (t) =>
-                    t.name === 'SpellCastingProcess' &&
-                    t.schema === 'spellcasting'
-            );
+    if (spellCastingRel) {
+      // Find the corresponding tables
+      const spellTable = result.tables.find(
+        (t) => t.name === 'Spell' && t.schema === 'spellcasting'
+      );
+      const spellCastingProcessTable = result.tables.find(
+        (t) => t.name === 'SpellCastingProcess' && t.schema === 'spellcasting'
+      );
 
-            console.log('SpellCastingProcess relationship:', {
-                sourceTableId: spellCastingRel.sourceTableId,
-                targetTableId: spellCastingRel.targetTableId,
-                spellCastingProcessTableId: spellCastingProcessTable?.id,
-                spellTableId: spellTable?.id,
-                isSourceIdValid:
-                    spellCastingRel.sourceTableId ===
-                    spellCastingProcessTable?.id,
-                isTargetIdValid:
-                    spellCastingRel.targetTableId === spellTable?.id,
-            });
+      console.log('SpellCastingProcess relationship:', {
+        sourceTableId: spellCastingRel.sourceTableId,
+        targetTableId: spellCastingRel.targetTableId,
+        spellCastingProcessTableId: spellCastingProcessTable?.id,
+        spellTableId: spellTable?.id,
+        isSourceIdValid:
+          spellCastingRel.sourceTableId === spellCastingProcessTable?.id,
+        isTargetIdValid: spellCastingRel.targetTableId === spellTable?.id,
+      });
 
-            // Verify the IDs are properly linked
-            expect(spellCastingRel.sourceTableId).toBeTruthy();
-            expect(spellCastingRel.targetTableId).toBeTruthy();
-            expect(spellCastingRel.sourceTableId).toBe(
-                spellCastingProcessTable!.id
-            );
-            expect(spellCastingRel.targetTableId).toBe(spellTable!.id);
-        }
+      // Verify the IDs are properly linked
+      expect(spellCastingRel.sourceTableId).toBeTruthy();
+      expect(spellCastingRel.targetTableId).toBeTruthy();
+      expect(spellCastingRel.sourceTableId).toBe(spellCastingProcessTable!.id);
+      expect(spellCastingRel.targetTableId).toBe(spellTable!.id);
+    }
 
-        // Check the apprentice self-referencing relationships
-        const apprenticeWizardRel = result.relationships.find(
-            (r) =>
-                r.sourceTable === 'Apprentice' &&
-                r.targetTable === 'Wizard' &&
-                r.sourceColumn === 'WizardId'
-        );
+    // Check the apprentice self-referencing relationships
+    const apprenticeWizardRel = result.relationships.find(
+      (r) =>
+        r.sourceTable === 'Apprentice' &&
+        r.targetTable === 'Wizard' &&
+        r.sourceColumn === 'WizardId'
+    );
 
-        const apprenticeMentorRel = result.relationships.find(
-            (r) =>
-                r.sourceTable === 'Apprentice' &&
-                r.targetTable === 'Wizard' &&
-                r.sourceColumn === 'MentorId'
-        );
+    const apprenticeMentorRel = result.relationships.find(
+      (r) =>
+        r.sourceTable === 'Apprentice' &&
+        r.targetTable === 'Wizard' &&
+        r.sourceColumn === 'MentorId'
+    );
 
-        expect(apprenticeWizardRel).toBeDefined();
-        expect(apprenticeMentorRel).toBeDefined();
+    expect(apprenticeWizardRel).toBeDefined();
+    expect(apprenticeMentorRel).toBeDefined();
 
-        // Check that all relationships have valid table IDs
-        const relationshipsWithMissingIds = result.relationships.filter(
-            (r) =>
-                !r.sourceTableId ||
-                !r.targetTableId ||
-                r.sourceTableId === '' ||
-                r.targetTableId === ''
-        );
+    // Check that all relationships have valid table IDs
+    const relationshipsWithMissingIds = result.relationships.filter(
+      (r) =>
+        !r.sourceTableId ||
+        !r.targetTableId ||
+        r.sourceTableId === '' ||
+        r.targetTableId === ''
+    );
 
-        if (relationshipsWithMissingIds.length > 0) {
-            console.log(
-                'Relationships with missing IDs:',
-                relationshipsWithMissingIds.slice(0, 5)
-            );
-        }
+    if (relationshipsWithMissingIds.length > 0) {
+      console.log(
+        'Relationships with missing IDs:',
+        relationshipsWithMissingIds.slice(0, 5)
+      );
+    }
 
-        expect(relationshipsWithMissingIds).toHaveLength(0);
-    });
+    expect(relationshipsWithMissingIds).toHaveLength(0);
+  });
 });

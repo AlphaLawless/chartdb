@@ -1,24 +1,24 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { fromPostgres } from '../postgresql';
 
 describe('Comment removal before formatting', () => {
-    it('should remove single-line comments', async () => {
-        const sql = `
+  it('should remove single-line comments', async () => {
+    const sql = `
 -- This is a comment that will be removed
 CREATE TABLE magic_items (
     item_id INTEGER PRIMARY KEY, -- unique identifier
     spell_power VARCHAR(100) -- mystical energy level
 );`;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(1);
-        expect(result.tables[0].name).toBe('magic_items');
-        expect(result.tables[0].columns).toHaveLength(2);
-    });
+    expect(result.tables).toHaveLength(1);
+    expect(result.tables[0].name).toBe('magic_items');
+    expect(result.tables[0].columns).toHaveLength(2);
+  });
 
-    it('should remove multi-line comments', async () => {
-        const sql = `
+  it('should remove multi-line comments', async () => {
+    const sql = `
 /* This is a multi-line comment
    that spans multiple lines
    and will be removed */
@@ -29,14 +29,14 @@ CREATE TABLE wizard_inventory (
     artifact_name VARCHAR(100)
 );`;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(1);
-        expect(result.tables[0].name).toBe('wizard_inventory');
-    });
+    expect(result.tables).toHaveLength(1);
+    expect(result.tables[0].name).toBe('wizard_inventory');
+  });
 
-    it('should preserve strings that contain comment-like patterns', async () => {
-        const sql = `
+  it('should preserve strings that contain comment-like patterns', async () => {
+    const sql = `
 CREATE TABLE potion_recipes (
     recipe_id INTEGER PRIMARY KEY,
     brewing_note VARCHAR(100) DEFAULT '--shake before use',
@@ -44,20 +44,20 @@ CREATE TABLE potion_recipes (
     instructions TEXT DEFAULT '/* mix carefully */'
 );`;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(1);
-        expect(result.tables[0].columns).toHaveLength(4);
+    expect(result.tables).toHaveLength(1);
+    expect(result.tables[0].columns).toHaveLength(4);
 
-        // Check that defaults are preserved
-        const brewingNoteCol = result.tables[0].columns.find(
-            (c) => c.name === 'brewing_note'
-        );
-        expect(brewingNoteCol?.default).toBeDefined();
-    });
+    // Check that defaults are preserved
+    const brewingNoteCol = result.tables[0].columns.find(
+      (c) => c.name === 'brewing_note'
+    );
+    expect(brewingNoteCol?.default).toBeDefined();
+  });
 
-    it('should handle complex scenarios with comments before tables', async () => {
-        const sql = `
+  it('should handle complex scenarios with comments before tables', async () => {
+    const sql = `
 -- Dragon types catalog
 CREATE TABLE dragons (dragon_id INTEGER PRIMARY KEY);
 
@@ -73,15 +73,15 @@ CREATE TABLE dragon_battles (
     PRIMARY KEY (dragon_id, knight_id)
 );`;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(3);
-        const tableNames = result.tables.map((t) => t.name).sort();
-        expect(tableNames).toEqual(['dragon_battles', 'dragons', 'knights']);
-    });
+    expect(result.tables).toHaveLength(3);
+    const tableNames = result.tables.map((t) => t.name).sort();
+    expect(tableNames).toEqual(['dragon_battles', 'dragons', 'knights']);
+  });
 
-    it('should handle the exact forth example scenario', async () => {
-        const sql = `
+  it('should handle the exact forth example scenario', async () => {
+    const sql = `
 CREATE TABLE spell_books (
     book_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     title VARCHAR(100) NOT NULL
@@ -101,13 +101,13 @@ CREATE TABLE book_spells (
     PRIMARY KEY (book_id, spell_id)
 );`;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(3);
-        expect(result.tables.map((t) => t.name).sort()).toEqual([
-            'book_spells',
-            'spell_books',
-            'spells',
-        ]);
-    });
+    expect(result.tables).toHaveLength(3);
+    expect(result.tables.map((t) => t.name).sort()).toEqual([
+      'book_spells',
+      'spell_books',
+      'spells',
+    ]);
+  });
 });

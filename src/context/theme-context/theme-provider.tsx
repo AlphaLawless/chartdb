@@ -1,61 +1,60 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import type { EffectiveTheme } from './theme-context';
-import { ThemeContext } from './theme-context';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useHotkeys } from 'react-hotkeys-hook';
 import { useMediaQuery } from 'react-responsive';
 import { useLocalConfig } from '@/hooks/use-local-config';
-import { useHotkeys } from 'react-hotkeys-hook';
 import {
-    KeyboardShortcutAction,
-    keyboardShortcutsForOS,
+  KeyboardShortcutAction,
+  keyboardShortcutsForOS,
 } from '../keyboard-shortcuts-context/keyboard-shortcuts';
+import type { EffectiveTheme } from './theme-context';
+import { ThemeContext } from './theme-context';
 
 export const ThemeProvider: React.FC<React.PropsWithChildren> = ({
-    children,
+  children,
 }) => {
-    const { theme, setTheme } = useLocalConfig();
-    const isDarkSystemTheme = useMediaQuery({
-        query: '(prefers-color-scheme: dark)',
-    });
+  const { theme, setTheme } = useLocalConfig();
+  const isDarkSystemTheme = useMediaQuery({
+    query: '(prefers-color-scheme: dark)',
+  });
 
-    const systemTheme = isDarkSystemTheme ? 'dark' : 'light';
+  const systemTheme = isDarkSystemTheme ? 'dark' : 'light';
 
-    const [effectiveTheme, setEffectiveTheme] =
-        useState<EffectiveTheme>(systemTheme);
+  const [effectiveTheme, setEffectiveTheme] =
+    useState<EffectiveTheme>(systemTheme);
 
-    useEffect(() => {
-        setEffectiveTheme(theme === 'system' ? systemTheme : theme);
-    }, [theme, systemTheme]);
+  useEffect(() => {
+    setEffectiveTheme(theme === 'system' ? systemTheme : theme);
+  }, [theme, systemTheme]);
 
-    useEffect(() => {
-        if (effectiveTheme === 'dark') {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-    }, [effectiveTheme]);
+  useEffect(() => {
+    if (effectiveTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [effectiveTheme]);
 
-    const handleThemeToggle = useCallback(() => {
-        if (theme === 'system') {
-            setTheme(effectiveTheme === 'dark' ? 'light' : 'dark');
-        } else {
-            setTheme(theme === 'dark' ? 'light' : 'dark');
-        }
-    }, [theme, effectiveTheme, setTheme]);
+  const handleThemeToggle = useCallback(() => {
+    if (theme === 'system') {
+      setTheme(effectiveTheme === 'dark' ? 'light' : 'dark');
+    } else {
+      setTheme(theme === 'dark' ? 'light' : 'dark');
+    }
+  }, [theme, effectiveTheme, setTheme]);
 
-    useHotkeys(
-        keyboardShortcutsForOS[KeyboardShortcutAction.TOGGLE_THEME]
-            .keyCombination,
-        handleThemeToggle,
-        {
-            preventDefault: true,
-            enableOnFormTags: true,
-        },
-        [handleThemeToggle]
-    );
+  useHotkeys(
+    keyboardShortcutsForOS[KeyboardShortcutAction.TOGGLE_THEME].keyCombination,
+    handleThemeToggle,
+    {
+      preventDefault: true,
+      enableOnFormTags: true,
+    },
+    [handleThemeToggle]
+  );
 
-    return (
-        <ThemeContext.Provider value={{ theme, setTheme, effectiveTheme }}>
-            {children}
-        </ThemeContext.Provider>
-    );
+  return (
+    <ThemeContext.Provider value={{ theme, setTheme, effectiveTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
 };

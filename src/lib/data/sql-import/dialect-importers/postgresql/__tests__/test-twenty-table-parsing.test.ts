@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { fromPostgres } from '../postgresql';
 
 describe('Full database import - 20 tables verification', () => {
-    it('should parse all 20 tables from quest management system', async () => {
-        const sql = `-- Quest Management System Database
+  it('should parse all 20 tables from quest management system', async () => {
+    const sql = `-- Quest Management System Database
 CREATE TYPE quest_status AS ENUM ('draft', 'active', 'on_hold', 'completed', 'abandoned');
 CREATE TYPE difficulty_level AS ENUM ('novice', 'apprentice', 'journeyman', 'expert', 'master');
 CREATE TYPE reward_type AS ENUM ('gold', 'item', 'experience', 'reputation', 'special');
@@ -177,83 +177,81 @@ CREATE TABLE guild_master_actions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );`;
 
-        // Expected tables for the quest management system
-        const expectedTables = [
-            'adventurers',
-            'guild_masters',
-            'regions',
-            'outposts',
-            'scouts',
-            'scout_region_assignments',
-            'quest_givers',
-            'quest_templates',
-            'quests',
-            'rewards',
-            'quest_sample_rewards', // Junction table that must be included!
-            'quest_rotations',
-            'rotation_quests',
-            'contracts',
-            'completion_events',
-            'bounties',
-            'guild_ledgers',
-            'reputation_logs',
-            'quest_suspensions',
-            'guild_master_actions',
-        ];
+    // Expected tables for the quest management system
+    const expectedTables = [
+      'adventurers',
+      'guild_masters',
+      'regions',
+      'outposts',
+      'scouts',
+      'scout_region_assignments',
+      'quest_givers',
+      'quest_templates',
+      'quests',
+      'rewards',
+      'quest_sample_rewards', // Junction table that must be included!
+      'quest_rotations',
+      'rotation_quests',
+      'contracts',
+      'completion_events',
+      'bounties',
+      'guild_ledgers',
+      'reputation_logs',
+      'quest_suspensions',
+      'guild_master_actions',
+    ];
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        console.log('\n=== PARSING RESULTS ===');
-        console.log(`Tables parsed: ${result.tables.length}`);
-        console.log(`Expected: ${expectedTables.length}`);
+    console.log('\n=== PARSING RESULTS ===');
+    console.log(`Tables parsed: ${result.tables.length}`);
+    console.log(`Expected: ${expectedTables.length}`);
 
-        const parsedTableNames = result.tables.map((t) => t.name).sort();
-        console.log('\nParsed tables:');
-        parsedTableNames.forEach((name, i) => {
-            console.log(`  ${i + 1}. ${name}`);
-        });
-
-        // Find missing tables
-        const missingTables = expectedTables.filter(
-            (expected) => !parsedTableNames.includes(expected)
-        );
-        if (missingTables.length > 0) {
-            console.log('\nMissing tables:');
-            missingTables.forEach((name) => {
-                console.log(`  - ${name}`);
-            });
-        }
-
-        // Check for quest_sample_rewards specifically
-        const questSampleRewards = result.tables.find(
-            (t) => t.name === 'quest_sample_rewards'
-        );
-        console.log(`\nquest_sample_rewards found: ${!!questSampleRewards}`);
-        if (questSampleRewards) {
-            console.log('quest_sample_rewards details:');
-            console.log(`  - Columns: ${questSampleRewards.columns.length}`);
-            questSampleRewards.columns.forEach((col) => {
-                console.log(`    - ${col.name}: ${col.type}`);
-            });
-        }
-
-        // Verify all tables were parsed
-        expect(result.tables).toHaveLength(expectedTables.length);
-        expect(parsedTableNames).toEqual(expectedTables.sort());
-
-        // Specifically check quest_sample_rewards junction table
-        expect(questSampleRewards).toBeDefined();
-        expect(questSampleRewards!.columns).toHaveLength(2);
-
-        const columnNames = questSampleRewards!.columns
-            .map((c) => c.name)
-            .sort();
-        expect(columnNames).toEqual(['quest_template_id', 'reward_id']);
-
-        // Check warnings if any
-        if (result.warnings && result.warnings.length > 0) {
-            console.log('\nWarnings:');
-            result.warnings.forEach((w) => console.log(`  - ${w}`));
-        }
+    const parsedTableNames = result.tables.map((t) => t.name).sort();
+    console.log('\nParsed tables:');
+    parsedTableNames.forEach((name, i) => {
+      console.log(`  ${i + 1}. ${name}`);
     });
+
+    // Find missing tables
+    const missingTables = expectedTables.filter(
+      (expected) => !parsedTableNames.includes(expected)
+    );
+    if (missingTables.length > 0) {
+      console.log('\nMissing tables:');
+      missingTables.forEach((name) => {
+        console.log(`  - ${name}`);
+      });
+    }
+
+    // Check for quest_sample_rewards specifically
+    const questSampleRewards = result.tables.find(
+      (t) => t.name === 'quest_sample_rewards'
+    );
+    console.log(`\nquest_sample_rewards found: ${!!questSampleRewards}`);
+    if (questSampleRewards) {
+      console.log('quest_sample_rewards details:');
+      console.log(`  - Columns: ${questSampleRewards.columns.length}`);
+      questSampleRewards.columns.forEach((col) => {
+        console.log(`    - ${col.name}: ${col.type}`);
+      });
+    }
+
+    // Verify all tables were parsed
+    expect(result.tables).toHaveLength(expectedTables.length);
+    expect(parsedTableNames).toEqual(expectedTables.sort());
+
+    // Specifically check quest_sample_rewards junction table
+    expect(questSampleRewards).toBeDefined();
+    expect(questSampleRewards!.columns).toHaveLength(2);
+
+    const columnNames = questSampleRewards!.columns.map((c) => c.name).sort();
+    expect(columnNames).toEqual(['quest_template_id', 'reward_id']);
+
+    // Check warnings if any
+    if (result.warnings && result.warnings.length > 0) {
+      console.log('\nWarnings:');
+      result.warnings.forEach((w) => console.log(`  - ${w}`));
+    }
+  });
 });

@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { fromPostgres } from '../postgresql';
 
 describe('ALTER TABLE FOREIGN KEY parsing with fallback', () => {
-    it('should parse foreign keys from ALTER TABLE ONLY statements with DEFERRABLE', async () => {
-        const sql = `
+  it('should parse foreign keys from ALTER TABLE ONLY statements with DEFERRABLE', async () => {
+    const sql = `
 CREATE TABLE "public"."wizard" (
     "id" bigint NOT NULL,
     "name" character varying(255) NOT NULL,
@@ -20,21 +20,21 @@ CREATE TABLE "public"."spellbook" (
 ALTER TABLE ONLY "public"."spellbook" ADD CONSTRAINT "spellbook_wizard_id_fk" FOREIGN KEY (wizard_id) REFERENCES wizard(id) DEFERRABLE INITIALLY DEFERRED DEFERRABLE;
 `;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(2);
-        expect(result.relationships).toHaveLength(1);
+    expect(result.tables).toHaveLength(2);
+    expect(result.relationships).toHaveLength(1);
 
-        const fk = result.relationships[0];
-        expect(fk.sourceTable).toBe('spellbook');
-        expect(fk.targetTable).toBe('wizard');
-        expect(fk.sourceColumn).toBe('wizard_id');
-        expect(fk.targetColumn).toBe('id');
-        expect(fk.name).toBe('spellbook_wizard_id_fk');
-    });
+    const fk = result.relationships[0];
+    expect(fk.sourceTable).toBe('spellbook');
+    expect(fk.targetTable).toBe('wizard');
+    expect(fk.sourceColumn).toBe('wizard_id');
+    expect(fk.targetColumn).toBe('id');
+    expect(fk.name).toBe('spellbook_wizard_id_fk');
+  });
 
-    it('should parse foreign keys without schema qualification', async () => {
-        const sql = `
+  it('should parse foreign keys without schema qualification', async () => {
+    const sql = `
 CREATE TABLE dragon (
     id UUID PRIMARY KEY,
     name VARCHAR(100) NOT NULL
@@ -50,22 +50,22 @@ CREATE TABLE dragon_rider (
 ALTER TABLE dragon_rider ADD CONSTRAINT dragon_rider_dragon_fk FOREIGN KEY (dragon_id) REFERENCES dragon(id);
 `;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(2);
-        expect(result.relationships).toHaveLength(1);
+    expect(result.tables).toHaveLength(2);
+    expect(result.relationships).toHaveLength(1);
 
-        const fk = result.relationships[0];
-        expect(fk.sourceTable).toBe('dragon_rider');
-        expect(fk.targetTable).toBe('dragon');
-        expect(fk.sourceColumn).toBe('dragon_id');
-        expect(fk.targetColumn).toBe('id');
-        expect(fk.sourceSchema).toBe('public');
-        expect(fk.targetSchema).toBe('public');
-    });
+    const fk = result.relationships[0];
+    expect(fk.sourceTable).toBe('dragon_rider');
+    expect(fk.targetTable).toBe('dragon');
+    expect(fk.sourceColumn).toBe('dragon_id');
+    expect(fk.targetColumn).toBe('id');
+    expect(fk.sourceSchema).toBe('public');
+    expect(fk.targetSchema).toBe('public');
+  });
 
-    it('should parse foreign keys with mixed schema specifications', async () => {
-        const sql = `
+  it('should parse foreign keys with mixed schema specifications', async () => {
+    const sql = `
 CREATE TABLE "magic_school"."instructor" (
     "id" bigint NOT NULL,
     "name" text NOT NULL,
@@ -83,22 +83,22 @@ CREATE TABLE "public"."apprentice" (
 ALTER TABLE ONLY "public"."apprentice" ADD CONSTRAINT "apprentice_instructor_fk" FOREIGN KEY (instructor_id) REFERENCES "magic_school"."instructor"(id) ON DELETE CASCADE;
 `;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(2);
-        expect(result.relationships).toHaveLength(1);
+    expect(result.tables).toHaveLength(2);
+    expect(result.relationships).toHaveLength(1);
 
-        const fk = result.relationships[0];
-        expect(fk.sourceTable).toBe('apprentice');
-        expect(fk.targetTable).toBe('instructor');
-        expect(fk.sourceSchema).toBe('public');
-        expect(fk.targetSchema).toBe('magic_school');
-        expect(fk.sourceColumn).toBe('instructor_id');
-        expect(fk.targetColumn).toBe('id');
-    });
+    const fk = result.relationships[0];
+    expect(fk.sourceTable).toBe('apprentice');
+    expect(fk.targetTable).toBe('instructor');
+    expect(fk.sourceSchema).toBe('public');
+    expect(fk.targetSchema).toBe('magic_school');
+    expect(fk.sourceColumn).toBe('instructor_id');
+    expect(fk.targetColumn).toBe('id');
+  });
 
-    it('should parse foreign keys with various constraint options', async () => {
-        const sql = `
+  it('should parse foreign keys with various constraint options', async () => {
+    const sql = `
 CREATE TABLE potion (
     id UUID PRIMARY KEY,
     name VARCHAR(100)
@@ -121,28 +121,28 @@ ALTER TABLE potion_ingredient ADD CONSTRAINT potion_ingredient_potion_fk FOREIGN
 ALTER TABLE ONLY potion_ingredient ADD CONSTRAINT potion_ingredient_ingredient_fk FOREIGN KEY (ingredient_id) REFERENCES ingredient(id) DEFERRABLE;
 `;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(3);
-        expect(result.relationships).toHaveLength(2);
+    expect(result.tables).toHaveLength(3);
+    expect(result.relationships).toHaveLength(2);
 
-        // Check first FK (with ON DELETE CASCADE ON UPDATE CASCADE)
-        const potionFK = result.relationships.find(
-            (r) => r.sourceColumn === 'potion_id'
-        );
-        expect(potionFK).toBeDefined();
-        expect(potionFK?.targetTable).toBe('potion');
+    // Check first FK (with ON DELETE CASCADE ON UPDATE CASCADE)
+    const potionFK = result.relationships.find(
+      (r) => r.sourceColumn === 'potion_id'
+    );
+    expect(potionFK).toBeDefined();
+    expect(potionFK?.targetTable).toBe('potion');
 
-        // Check second FK (with DEFERRABLE)
-        const ingredientFK = result.relationships.find(
-            (r) => r.sourceColumn === 'ingredient_id'
-        );
-        expect(ingredientFK).toBeDefined();
-        expect(ingredientFK?.targetTable).toBe('ingredient');
-    });
+    // Check second FK (with DEFERRABLE)
+    const ingredientFK = result.relationships.find(
+      (r) => r.sourceColumn === 'ingredient_id'
+    );
+    expect(ingredientFK).toBeDefined();
+    expect(ingredientFK?.targetTable).toBe('ingredient');
+  });
 
-    it('should handle quoted and unquoted identifiers', async () => {
-        const sql = `
+  it('should handle quoted and unquoted identifiers', async () => {
+    const sql = `
 CREATE TABLE "wizard_tower" (
     id BIGINT PRIMARY KEY,
     "tower_name" VARCHAR(255)
@@ -161,31 +161,31 @@ ALTER TABLE wizard_resident ADD CONSTRAINT wizard_tower_fk FOREIGN KEY (tower_id
 ALTER TABLE ONLY "wizard_resident" ADD CONSTRAINT "wizard_tower_fk2" FOREIGN KEY ("tower_id") REFERENCES "wizard_tower"("id") ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED DEFERRABLE;
 `;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        console.log('Relationships found:', result.relationships.length);
-        result.relationships.forEach((rel, i) => {
-            console.log(
-                `FK ${i + 1}: ${rel.sourceTable}.${rel.sourceColumn} -> ${rel.targetTable}.${rel.targetColumn}`
-            );
-        });
-        console.log('Warnings:', result.warnings);
-
-        expect(result.tables).toHaveLength(2);
-
-        // At least one relationship should be found (the regex fallback should catch at least one)
-        expect(result.relationships.length).toBeGreaterThanOrEqual(1);
-
-        // Check the first relationship
-        const fk = result.relationships[0];
-        expect(fk.sourceTable).toBe('wizard_resident');
-        expect(fk.targetTable).toBe('wizard_tower');
-        expect(fk.sourceColumn).toBe('tower_id');
-        expect(fk.targetColumn).toBe('id');
+    console.log('Relationships found:', result.relationships.length);
+    result.relationships.forEach((rel, i) => {
+      console.log(
+        `FK ${i + 1}: ${rel.sourceTable}.${rel.sourceColumn} -> ${rel.targetTable}.${rel.targetColumn}`
+      );
     });
+    console.log('Warnings:', result.warnings);
 
-    it('should handle the exact problematic syntax from postgres_seven', async () => {
-        const sql = `
+    expect(result.tables).toHaveLength(2);
+
+    // At least one relationship should be found (the regex fallback should catch at least one)
+    expect(result.relationships.length).toBeGreaterThanOrEqual(1);
+
+    // Check the first relationship
+    const fk = result.relationships[0];
+    expect(fk.sourceTable).toBe('wizard_resident');
+    expect(fk.targetTable).toBe('wizard_tower');
+    expect(fk.sourceColumn).toBe('tower_id');
+    expect(fk.targetColumn).toBe('id');
+  });
+
+  it('should handle the exact problematic syntax from postgres_seven', async () => {
+    const sql = `
 CREATE TABLE "public"."users_user" (
     "id" bigint NOT NULL,
     "email" character varying(254) NOT NULL,
@@ -203,24 +203,24 @@ CREATE TABLE "public"."account_emailaddress" (
 ALTER TABLE ONLY "public"."account_emailaddress" ADD CONSTRAINT "account_emailaddress_user_id_2c513194_fk_users_user_id" FOREIGN KEY (user_id) REFERENCES users_user(id) DEFERRABLE INITIALLY DEFERRED DEFERRABLE;
 `;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        console.log('Warnings:', result.warnings);
-        console.log('Relationships:', result.relationships);
+    console.log('Warnings:', result.warnings);
+    console.log('Relationships:', result.relationships);
 
-        expect(result.tables).toHaveLength(2);
-        expect(result.relationships).toHaveLength(1);
+    expect(result.tables).toHaveLength(2);
+    expect(result.relationships).toHaveLength(1);
 
-        const fk = result.relationships[0];
-        expect(fk.name).toBe(
-            'account_emailaddress_user_id_2c513194_fk_users_user_id'
-        );
-        expect(fk.sourceTable).toBe('account_emailaddress');
-        expect(fk.targetTable).toBe('users_user');
-    });
+    const fk = result.relationships[0];
+    expect(fk.name).toBe(
+      'account_emailaddress_user_id_2c513194_fk_users_user_id'
+    );
+    expect(fk.sourceTable).toBe('account_emailaddress');
+    expect(fk.targetTable).toBe('users_user');
+  });
 
-    it('should handle multiple foreign keys in different formats', async () => {
-        const sql = `
+  it('should handle multiple foreign keys in different formats', async () => {
+    const sql = `
 CREATE TABLE realm (
     id UUID PRIMARY KEY,
     name VARCHAR(100)
@@ -245,29 +245,29 @@ ALTER TABLE city ADD CONSTRAINT city_region_fk FOREIGN KEY (region_id) REFERENCE
 ALTER TABLE ONLY "public"."city" ADD CONSTRAINT "city_realm_fk" FOREIGN KEY ("realm_id") REFERENCES "public"."realm"("id");
 `;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(3);
-        expect(result.relationships).toHaveLength(3);
+    expect(result.tables).toHaveLength(3);
+    expect(result.relationships).toHaveLength(3);
 
-        // Verify all three relationships were captured
-        const regionRealmFK = result.relationships.find(
-            (r) => r.sourceTable === 'region' && r.targetTable === 'realm'
-        );
-        const cityRegionFK = result.relationships.find(
-            (r) => r.sourceTable === 'city' && r.targetTable === 'region'
-        );
-        const cityRealmFK = result.relationships.find(
-            (r) => r.sourceTable === 'city' && r.targetTable === 'realm'
-        );
+    // Verify all three relationships were captured
+    const regionRealmFK = result.relationships.find(
+      (r) => r.sourceTable === 'region' && r.targetTable === 'realm'
+    );
+    const cityRegionFK = result.relationships.find(
+      (r) => r.sourceTable === 'city' && r.targetTable === 'region'
+    );
+    const cityRealmFK = result.relationships.find(
+      (r) => r.sourceTable === 'city' && r.targetTable === 'realm'
+    );
 
-        expect(regionRealmFK).toBeDefined();
-        expect(cityRegionFK).toBeDefined();
-        expect(cityRealmFK).toBeDefined();
-    });
+    expect(regionRealmFK).toBeDefined();
+    expect(cityRegionFK).toBeDefined();
+    expect(cityRealmFK).toBeDefined();
+  });
 
-    it('should use regex fallback for unparseable ALTER TABLE statements', async () => {
-        const sql = `
+  it('should use regex fallback for unparseable ALTER TABLE statements', async () => {
+    const sql = `
 CREATE TABLE magical_item (
     id UUID PRIMARY KEY,
     name VARCHAR(255)
@@ -283,25 +283,24 @@ CREATE TABLE enchantment (
 ALTER TABLE ONLY enchantment ADD CONSTRAINT enchantment_item_fk FOREIGN KEY (item_id) REFERENCES magical_item(id) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE INITIALLY DEFERRED DEFERRABLE;
 `;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        // Should find the foreign key even if parser fails
-        expect(result.relationships).toHaveLength(1);
+    // Should find the foreign key even if parser fails
+    expect(result.relationships).toHaveLength(1);
 
-        const fk = result.relationships[0];
-        expect(fk.name).toBe('enchantment_item_fk');
-        expect(fk.sourceTable).toBe('enchantment');
-        expect(fk.targetTable).toBe('magical_item');
-        expect(fk.sourceColumn).toBe('item_id');
-        expect(fk.targetColumn).toBe('id');
+    const fk = result.relationships[0];
+    expect(fk.name).toBe('enchantment_item_fk');
+    expect(fk.sourceTable).toBe('enchantment');
+    expect(fk.targetTable).toBe('magical_item');
+    expect(fk.sourceColumn).toBe('item_id');
+    expect(fk.targetColumn).toBe('id');
 
-        // Should have a warning about the failed parse
-        expect(result.warnings).toBeDefined();
-        const hasAlterWarning = result.warnings!.some(
-            (w) =>
-                w.includes('Failed to parse statement') &&
-                w.includes('ALTER TABLE')
-        );
-        expect(hasAlterWarning).toBe(true);
-    });
+    // Should have a warning about the failed parse
+    expect(result.warnings).toBeDefined();
+    const hasAlterWarning = result.warnings!.some(
+      (w) =>
+        w.includes('Failed to parse statement') && w.includes('ALTER TABLE')
+    );
+    expect(hasAlterWarning).toBe(true);
+  });
 });

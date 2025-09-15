@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { fromPostgres } from '../postgresql';
 
 describe('Exact forth example reproduction - Spell Plans Database', () => {
-    it('should parse the exact SQL from forth example with spell plans and magical components', async () => {
-        // Exact copy of the SQL that's failing
-        const sql = `-- Using ENUM types for fixed sets of values improves data integrity.
+  it('should parse the exact SQL from forth example with spell plans and magical components', async () => {
+    // Exact copy of the SQL that's failing
+    const sql = `-- Using ENUM types for fixed sets of values improves data integrity.
 CREATE TYPE quest_status AS ENUM ('active', 'paused', 'grace_period', 'expired', 'completed');
 CREATE TYPE spell_frequency AS ENUM ('daily', 'weekly');
 CREATE TYPE magic_time AS ENUM ('dawn', 'dusk', 'both');
@@ -44,32 +44,28 @@ CREATE TABLE plan_sample_spells (
     PRIMARY KEY (spell_plan_id, spell_id)
 );`;
 
-        console.log('Testing exact SQL from forth example...');
+    console.log('Testing exact SQL from forth example...');
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        console.log('Results:', {
-            tables: result.tables.length,
-            tableNames: result.tables.map((t) => t.name),
-            warnings: result.warnings?.length || 0,
-        });
-
-        // Should have 3 tables
-        expect(result.tables).toHaveLength(3);
-
-        // Check all table names
-        const tableNames = result.tables.map((t) => t.name).sort();
-        expect(tableNames).toEqual([
-            'plan_sample_spells',
-            'spell_plans',
-            'spells',
-        ]);
-
-        // Verify plan_sample_spells exists
-        const planSampleSpells = result.tables.find(
-            (t) => t.name === 'plan_sample_spells'
-        );
-        expect(planSampleSpells).toBeDefined();
-        expect(planSampleSpells!.columns).toHaveLength(2);
+    console.log('Results:', {
+      tables: result.tables.length,
+      tableNames: result.tables.map((t) => t.name),
+      warnings: result.warnings?.length || 0,
     });
+
+    // Should have 3 tables
+    expect(result.tables).toHaveLength(3);
+
+    // Check all table names
+    const tableNames = result.tables.map((t) => t.name).sort();
+    expect(tableNames).toEqual(['plan_sample_spells', 'spell_plans', 'spells']);
+
+    // Verify plan_sample_spells exists
+    const planSampleSpells = result.tables.find(
+      (t) => t.name === 'plan_sample_spells'
+    );
+    expect(planSampleSpells).toBeDefined();
+    expect(planSampleSpells!.columns).toHaveLength(2);
+  });
 });

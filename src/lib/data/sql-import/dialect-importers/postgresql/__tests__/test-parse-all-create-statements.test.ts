@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { fromPostgres } from '../postgresql';
 
 describe('Table Count Validation', () => {
-    it('should parse all CREATE TABLE statements without missing any', async () => {
-        const sql = `
+  it('should parse all CREATE TABLE statements without missing any', async () => {
+    const sql = `
 -- Table 1 comment
 CREATE TABLE table1 (id INTEGER PRIMARY KEY);
 
@@ -24,36 +24,36 @@ CREATE TABLE "quoted_table" (id INTEGER PRIMARY KEY);
 
 CREATE TABLE schema1.table_with_schema (id INTEGER PRIMARY KEY);`;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        // Count CREATE TABLE statements in the SQL
-        const createTableCount = (sql.match(/CREATE TABLE/gi) || []).length;
+    // Count CREATE TABLE statements in the SQL
+    const createTableCount = (sql.match(/CREATE TABLE/gi) || []).length;
 
-        console.log(`\nValidation:`);
-        console.log(`- CREATE TABLE statements in SQL: ${createTableCount}`);
-        console.log(`- Tables parsed: ${result.tables.length}`);
-        console.log(
-            `- Table names: ${result.tables.map((t) => t.name).join(', ')}`
-        );
+    console.log(`\nValidation:`);
+    console.log(`- CREATE TABLE statements in SQL: ${createTableCount}`);
+    console.log(`- Tables parsed: ${result.tables.length}`);
+    console.log(
+      `- Table names: ${result.tables.map((t) => t.name).join(', ')}`
+    );
 
-        // All CREATE TABLE statements should result in a parsed table
-        expect(result.tables).toHaveLength(createTableCount);
+    // All CREATE TABLE statements should result in a parsed table
+    expect(result.tables).toHaveLength(createTableCount);
 
-        // Verify specific tables
-        const expectedTables = [
-            'table1',
-            'table2',
-            'table3',
-            'table1_table2',
-            'quoted_table',
-            'table_with_schema',
-        ];
-        const actualTables = result.tables.map((t) => t.name).sort();
-        expect(actualTables).toEqual(expectedTables.sort());
-    });
+    // Verify specific tables
+    const expectedTables = [
+      'table1',
+      'table2',
+      'table3',
+      'table1_table2',
+      'quoted_table',
+      'table_with_schema',
+    ];
+    const actualTables = result.tables.map((t) => t.name).sort();
+    expect(actualTables).toEqual(expectedTables.sort());
+  });
 
-    it('should handle edge cases that might cause tables to be missed', async () => {
-        const sql = `
+  it('should handle edge cases that might cause tables to be missed', async () => {
+    const sql = `
 -- This tests various edge cases
 
 -- 1. Table with only foreign key columns (no regular columns)
@@ -78,24 +78,24 @@ CREATE TABLE complex_constraints (
     CONSTRAINT chk_positive CHECK (id > 0)
 );`;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        const createTableCount = (sql.match(/CREATE TABLE/gi) || []).length;
+    const createTableCount = (sql.match(/CREATE TABLE/gi) || []).length;
 
-        console.log(`\nEdge case validation:`);
-        console.log(`- CREATE TABLE statements: ${createTableCount}`);
-        console.log(`- Tables parsed: ${result.tables.length}`);
-        console.log(
-            `- Expected tables: only_fks, no_pk, empty_table, complex_constraints`
-        );
-        console.log(
-            `- Actual tables: ${result.tables.map((t) => t.name).join(', ')}`
-        );
-        result.tables.forEach((t) => {
-            console.log(`- ${t.name}: ${t.columns.length} columns`);
-        });
-
-        // Even edge cases should be parsed
-        expect(result.tables).toHaveLength(createTableCount);
+    console.log(`\nEdge case validation:`);
+    console.log(`- CREATE TABLE statements: ${createTableCount}`);
+    console.log(`- Tables parsed: ${result.tables.length}`);
+    console.log(
+      `- Expected tables: only_fks, no_pk, empty_table, complex_constraints`
+    );
+    console.log(
+      `- Actual tables: ${result.tables.map((t) => t.name).join(', ')}`
+    );
+    result.tables.forEach((t) => {
+      console.log(`- ${t.name}: ${t.columns.length} columns`);
     });
+
+    // Even edge cases should be parsed
+    expect(result.tables).toHaveLength(createTableCount);
+  });
 });

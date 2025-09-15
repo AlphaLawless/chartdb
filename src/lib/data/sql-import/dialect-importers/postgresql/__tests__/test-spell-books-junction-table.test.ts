@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { fromPostgres } from '../postgresql';
 
 describe('Junction Table Parsing', () => {
-    it('should parse junction table with composite primary key', async () => {
-        const sql = `
+  it('should parse junction table with composite primary key', async () => {
+    const sql = `
 CREATE TABLE spell_books (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     title VARCHAR(100) NOT NULL
@@ -21,40 +21,40 @@ CREATE TABLE book_spells (
     PRIMARY KEY (spell_book_id, spell_id)
 );`;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        // Should parse all 3 tables
-        expect(result.tables).toHaveLength(3);
+    // Should parse all 3 tables
+    expect(result.tables).toHaveLength(3);
 
-        const tableNames = result.tables.map((t) => t.name).sort();
-        expect(tableNames).toEqual(['book_spells', 'spell_books', 'spells']);
+    const tableNames = result.tables.map((t) => t.name).sort();
+    expect(tableNames).toEqual(['book_spells', 'spell_books', 'spells']);
 
-        // Check book_spells specifically
-        const bookSpells = result.tables.find((t) => t.name === 'book_spells');
-        expect(bookSpells).toBeDefined();
-        expect(bookSpells!.columns).toHaveLength(2);
+    // Check book_spells specifically
+    const bookSpells = result.tables.find((t) => t.name === 'book_spells');
+    expect(bookSpells).toBeDefined();
+    expect(bookSpells!.columns).toHaveLength(2);
 
-        const columnNames = bookSpells!.columns.map((c) => c.name).sort();
-        expect(columnNames).toEqual(['spell_book_id', 'spell_id']);
+    const columnNames = bookSpells!.columns.map((c) => c.name).sort();
+    expect(columnNames).toEqual(['spell_book_id', 'spell_id']);
 
-        // Check that both columns are recognized as foreign keys
-        const spellBookIdColumn = bookSpells!.columns.find(
-            (c) => c.name === 'spell_book_id'
-        );
-        expect(spellBookIdColumn).toBeDefined();
-        expect(spellBookIdColumn!.type).toBe('UUID');
-        expect(spellBookIdColumn!.nullable).toBe(false);
+    // Check that both columns are recognized as foreign keys
+    const spellBookIdColumn = bookSpells!.columns.find(
+      (c) => c.name === 'spell_book_id'
+    );
+    expect(spellBookIdColumn).toBeDefined();
+    expect(spellBookIdColumn!.type).toBe('UUID');
+    expect(spellBookIdColumn!.nullable).toBe(false);
 
-        const spellIdColumn = bookSpells!.columns.find(
-            (c) => c.name === 'spell_id'
-        );
-        expect(spellIdColumn).toBeDefined();
-        expect(spellIdColumn!.type).toBe('UUID');
-        expect(spellIdColumn!.nullable).toBe(false);
-    });
+    const spellIdColumn = bookSpells!.columns.find(
+      (c) => c.name === 'spell_id'
+    );
+    expect(spellIdColumn).toBeDefined();
+    expect(spellIdColumn!.type).toBe('UUID');
+    expect(spellIdColumn!.nullable).toBe(false);
+  });
 
-    it('should handle various junction table formats', async () => {
-        const sql = `
+  it('should handle various junction table formats', async () => {
+    const sql = `
 -- Format 1: Inline references
 CREATE TABLE artifact_enchantments (
     artifact_id INTEGER NOT NULL REFERENCES artifacts(id),
@@ -79,32 +79,30 @@ CREATE TABLE potion_ingredients (
     CONSTRAINT pk_potion_ingredients PRIMARY KEY (potion_id, ingredient_id)
 );`;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(3);
+    expect(result.tables).toHaveLength(3);
 
-        // All tables should be found
-        const tableNames = result.tables.map((t) => t.name).sort();
-        expect(tableNames).toEqual([
-            'artifact_enchantments',
-            'potion_ingredients',
-            'wizard_guilds',
-        ]);
+    // All tables should be found
+    const tableNames = result.tables.map((t) => t.name).sort();
+    expect(tableNames).toEqual([
+      'artifact_enchantments',
+      'potion_ingredients',
+      'wizard_guilds',
+    ]);
 
-        // Check each table has the expected columns
-        const artifactEnchantments = result.tables.find(
-            (t) => t.name === 'artifact_enchantments'
-        );
-        expect(artifactEnchantments!.columns).toHaveLength(2);
+    // Check each table has the expected columns
+    const artifactEnchantments = result.tables.find(
+      (t) => t.name === 'artifact_enchantments'
+    );
+    expect(artifactEnchantments!.columns).toHaveLength(2);
 
-        const wizardGuilds = result.tables.find(
-            (t) => t.name === 'wizard_guilds'
-        );
-        expect(wizardGuilds!.columns).toHaveLength(4); // Including joined_at and recruited_by
+    const wizardGuilds = result.tables.find((t) => t.name === 'wizard_guilds');
+    expect(wizardGuilds!.columns).toHaveLength(4); // Including joined_at and recruited_by
 
-        const potionIngredients = result.tables.find(
-            (t) => t.name === 'potion_ingredients'
-        );
-        expect(potionIngredients!.columns).toHaveLength(3); // Including quantity
-    });
+    const potionIngredients = result.tables.find(
+      (t) => t.name === 'potion_ingredients'
+    );
+    expect(potionIngredients!.columns).toHaveLength(3); // Including quantity
+  });
 });

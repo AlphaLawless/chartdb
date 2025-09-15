@@ -1,445 +1,435 @@
-import React, {
-    useMemo,
-    useState,
-    useEffect,
-    useCallback,
-    useRef,
-} from 'react';
-import { useChartDB } from '@/hooks/use-chartdb';
-import { useTheme } from '@/hooks/use-theme';
-import { CodeSnippet } from '@/components/code-snippet/code-snippet';
-import type { EffectiveTheme } from '@/context/theme-context/theme-context';
-import type { Diagram } from '@/lib/domain/diagram';
-import { useToast } from '@/components/toast/use-toast';
-import { setupDBMLLanguage } from '@/components/code-snippet/languages/dbml-language';
 import {
-    AlertCircle,
-    ArrowLeftRight,
-    Check,
-    Pencil,
-    PencilOff,
-    Undo2,
-    X,
+  AlertCircle,
+  ArrowLeftRight,
+  Check,
+  Pencil,
+  PencilOff,
+  Undo2,
+  X,
 } from 'lucide-react';
-import { generateDBMLFromDiagram } from '@/lib/dbml/dbml-export/dbml-export';
-import { useDiff } from '@/context/diff-context/use-diff';
-import { importDBMLToDiagram } from '@/lib/dbml/dbml-import/dbml-import';
-import { applyDBMLChanges } from '@/lib/dbml/apply-dbml/apply-dbml';
-import { useDebounce } from '@/hooks/use-debounce';
-import { parseDBMLError } from '@/lib/dbml/dbml-import/dbml-import-error';
-import {
-    clearErrorHighlight,
-    highlightErrorLine,
-} from '@/components/code-snippet/dbml/utils';
 import type * as monaco from 'monaco-editor';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
+import { CodeSnippet } from '@/components/code-snippet/code-snippet';
+import {
+  clearErrorHighlight,
+  highlightErrorLine,
+} from '@/components/code-snippet/dbml/utils';
+import { setupDBMLLanguage } from '@/components/code-snippet/languages/dbml-language';
+import { useToast } from '@/components/toast/use-toast';
+import { useDiff } from '@/context/diff-context/use-diff';
+import type { EffectiveTheme } from '@/context/theme-context/theme-context';
+import { useChartDB } from '@/hooks/use-chartdb';
+import { useDebounce } from '@/hooks/use-debounce';
 import { useFullScreenLoader } from '@/hooks/use-full-screen-spinner';
+import { useTheme } from '@/hooks/use-theme';
+import { applyDBMLChanges } from '@/lib/dbml/apply-dbml/apply-dbml';
+import { generateDBMLFromDiagram } from '@/lib/dbml/dbml-export/dbml-export';
+import { importDBMLToDiagram } from '@/lib/dbml/dbml-import/dbml-import';
+import { parseDBMLError } from '@/lib/dbml/dbml-import/dbml-import-error';
+import type { Diagram } from '@/lib/domain/diagram';
 
 export interface TableDBMLProps {}
 
 const getEditorTheme = (theme: EffectiveTheme) => {
-    return theme === 'dark' ? 'dbml-dark' : 'dbml-light';
+  return theme === 'dark' ? 'dbml-dark' : 'dbml-light';
 };
 
 export const TableDBML: React.FC<TableDBMLProps> = () => {
-    const { currentDiagram, updateDiagramData, databaseType, readonly } =
-        useChartDB();
-    const { effectiveTheme } = useTheme();
-    const { toast } = useToast();
-    const [dbmlFormat, setDbmlFormat] = useState<'inline' | 'standard'>(
-        'inline'
-    );
-    const [isLoading, setIsLoading] = useState(true);
-    const [standardDbml, setStandardDbml] = useState('');
-    const [inlineDbml, setInlineDbml] = useState('');
-    const isMountedRef = useRef(true);
-    const [isEditButtonEmphasized, setIsEditButtonEmphasized] = useState(false);
+  const { currentDiagram, updateDiagramData, databaseType, readonly } =
+    useChartDB();
+  const { effectiveTheme } = useTheme();
+  const { toast } = useToast();
+  const [dbmlFormat, setDbmlFormat] = useState<'inline' | 'standard'>('inline');
+  const [isLoading, setIsLoading] = useState(true);
+  const [standardDbml, setStandardDbml] = useState('');
+  const [inlineDbml, setInlineDbml] = useState('');
+  const isMountedRef = useRef(true);
+  const [isEditButtonEmphasized, setIsEditButtonEmphasized] = useState(false);
 
-    const editorRef = useRef<monaco.editor.IStandaloneCodeEditor>();
-    const decorationsCollection =
-        useRef<monaco.editor.IEditorDecorationsCollection>();
+  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor>();
+  const decorationsCollection =
+    useRef<monaco.editor.IEditorDecorationsCollection>();
 
-    const handleEditorDidMount = useCallback(
-        (editor: monaco.editor.IStandaloneCodeEditor) => {
-            editorRef.current = editor;
-            decorationsCollection.current =
-                editor.createDecorationsCollection();
+  const handleEditorDidMount = useCallback(
+    (editor: monaco.editor.IStandaloneCodeEditor) => {
+      editorRef.current = editor;
+      decorationsCollection.current = editor.createDecorationsCollection();
 
-            if (readOnlyDisposableRef.current) {
-                readOnlyDisposableRef.current.dispose();
-            }
+      if (readOnlyDisposableRef.current) {
+        readOnlyDisposableRef.current.dispose();
+      }
 
-            const readOnlyDisposable = editor.onDidAttemptReadOnlyEdit(() => {
-                if (emphasisTimeoutRef.current) {
-                    clearTimeout(emphasisTimeoutRef.current);
-                }
+      const readOnlyDisposable = editor.onDidAttemptReadOnlyEdit(() => {
+        if (emphasisTimeoutRef.current) {
+          clearTimeout(emphasisTimeoutRef.current);
+        }
 
-                setIsEditButtonEmphasized(false);
+        setIsEditButtonEmphasized(false);
 
-                requestAnimationFrame(() => {
-                    setIsEditButtonEmphasized(true);
+        requestAnimationFrame(() => {
+          setIsEditButtonEmphasized(true);
 
-                    emphasisTimeoutRef.current = setTimeout(() => {
-                        setIsEditButtonEmphasized(false);
-                    }, 600);
-                });
-            });
+          emphasisTimeoutRef.current = setTimeout(() => {
+            setIsEditButtonEmphasized(false);
+          }, 600);
+        });
+      });
 
-            readOnlyDisposableRef.current = readOnlyDisposable;
-        },
-        []
-    );
+      readOnlyDisposableRef.current = readOnlyDisposable;
+    },
+    []
+  );
 
-    // Determine which DBML string to display
-    const dbmlToDisplay = useMemo(
-        () => (dbmlFormat === 'inline' ? inlineDbml : standardDbml),
-        [dbmlFormat, inlineDbml, standardDbml]
-    );
+  // Determine which DBML string to display
+  const dbmlToDisplay = useMemo(
+    () => (dbmlFormat === 'inline' ? inlineDbml : standardDbml),
+    [dbmlFormat, inlineDbml, standardDbml]
+  );
 
-    // Toggle function
-    const toggleFormat = useCallback(() => {
-        setDbmlFormat((prev) => (prev === 'inline' ? 'standard' : 'inline'));
-    }, []);
+  // Toggle function
+  const toggleFormat = useCallback(() => {
+    setDbmlFormat((prev) => (prev === 'inline' ? 'standard' : 'inline'));
+  }, []);
 
-    const [isEditMode, setIsEditMode] = useState(false);
-    const [editedDbml, setEditedDbml] = useState<string>('');
-    const lastDBMLChange = useRef(editedDbml);
-    const { calculateDiff, originalDiagram, resetDiff, hasDiff, newDiagram } =
-        useDiff();
-    const { loadDiagramFromData } = useChartDB();
-    const [errorMessage, setErrorMessage] = useState<string>();
-    const [warningMessage, setWarningMessage] = useState<string>();
-    const { t } = useTranslation();
-    const { hideLoader, showLoader } = useFullScreenLoader();
-    const emphasisTimeoutRef = useRef<NodeJS.Timeout>();
-    const readOnlyDisposableRef = useRef<monaco.IDisposable>();
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editedDbml, setEditedDbml] = useState<string>('');
+  const lastDBMLChange = useRef(editedDbml);
+  const { calculateDiff, originalDiagram, resetDiff, hasDiff, newDiagram } =
+    useDiff();
+  const { loadDiagramFromData } = useChartDB();
+  const [errorMessage, setErrorMessage] = useState<string>();
+  const [warningMessage, setWarningMessage] = useState<string>();
+  const { t } = useTranslation();
+  const { hideLoader, showLoader } = useFullScreenLoader();
+  const emphasisTimeoutRef = useRef<NodeJS.Timeout>();
+  const readOnlyDisposableRef = useRef<monaco.IDisposable>();
 
-    // --- Check for empty field name warnings only on mount ---
-    useEffect(() => {
-        // Only check when not in edit mode
-        if (isEditMode) return;
+  // --- Check for empty field name warnings only on mount ---
+  useEffect(() => {
+    // Only check when not in edit mode
+    if (isEditMode) return;
 
-        let foundInvalidFields = false;
-        const invalidTableNames = new Set<string>();
+    let foundInvalidFields = false;
+    const invalidTableNames = new Set<string>();
 
-        currentDiagram.tables?.forEach((table) => {
-            table.fields.forEach((field) => {
-                if (field.name === '') {
-                    foundInvalidFields = true;
-                    invalidTableNames.add(table.name);
-                }
-            });
+    currentDiagram.tables?.forEach((table) => {
+      table.fields.forEach((field) => {
+        if (field.name === '') {
+          foundInvalidFields = true;
+          invalidTableNames.add(table.name);
+        }
+      });
+    });
+
+    if (foundInvalidFields) {
+      const tableNamesString = Array.from(invalidTableNames).join(', ');
+      setWarningMessage(
+        `Some fields had empty names in tables: [${tableNamesString}] and were excluded from the DBML export.`
+      );
+    }
+  }, [currentDiagram.tables, isEditMode]);
+
+  useEffect(() => {
+    if (isEditMode) {
+      setIsLoading(false);
+      return;
+    }
+
+    setErrorMessage(undefined);
+    clearErrorHighlight(decorationsCollection.current);
+
+    const generateDBML = async () => {
+      setIsLoading(true);
+
+      const result = generateDBMLFromDiagram(currentDiagram);
+
+      // Handle errors
+      if (result.error) {
+        toast({
+          title: 'DBML Export Error',
+          description: `Could not generate DBML: ${result.error.substring(0, 100)}${result.error.length > 100 ? '...' : ''}`,
+          variant: 'destructive',
+        });
+      }
+
+      setStandardDbml(result.standardDbml);
+      setInlineDbml(result.inlineDbml);
+      setIsLoading(false);
+    };
+
+    setTimeout(() => generateDBML(), 0);
+  }, [currentDiagram, toast, isEditMode]);
+
+  // Update editedDbml when dbmlToDisplay changes
+  useEffect(() => {
+    if (!isLoading && dbmlToDisplay && !isEditMode) {
+      setEditedDbml(dbmlToDisplay);
+      lastDBMLChange.current = dbmlToDisplay;
+    }
+  }, [dbmlToDisplay, isLoading, isEditMode]);
+
+  // Create the showDiff function
+  const showDiff = useCallback(
+    async (dbmlContent: string) => {
+      clearErrorHighlight(decorationsCollection.current);
+      setErrorMessage(undefined);
+      try {
+        const diagramFromDBML: Diagram = await importDBMLToDiagram(
+          dbmlContent,
+          { databaseType }
+        );
+
+        const sourceDiagram: Diagram = originalDiagram ?? currentDiagram;
+
+        const targetDiagram: Diagram = {
+          ...sourceDiagram,
+          tables: diagramFromDBML.tables,
+          relationships: diagramFromDBML.relationships,
+          customTypes: diagramFromDBML.customTypes,
+        };
+
+        const newDiagram = applyDBMLChanges({
+          sourceDiagram,
+          targetDiagram,
         });
 
-        if (foundInvalidFields) {
-            const tableNamesString = Array.from(invalidTableNames).join(', ');
-            setWarningMessage(
-                `Some fields had empty names in tables: [${tableNamesString}] and were excluded from the DBML export.`
-            );
-        }
-    }, [currentDiagram.tables, t, isEditMode]);
-
-    useEffect(() => {
-        if (isEditMode) {
-            setIsLoading(false);
-            return;
+        if (originalDiagram) {
+          resetDiff();
+          loadDiagramFromData(originalDiagram);
         }
 
-        setErrorMessage(undefined);
-        clearErrorHighlight(decorationsCollection.current);
+        calculateDiff({
+          diagram: sourceDiagram,
+          newDiagram,
+          options: { summaryOnly: true },
+        });
+      } catch (error) {
+        const dbmlError = parseDBMLError(error);
 
-        const generateDBML = async () => {
-            setIsLoading(true);
+        if (dbmlError) {
+          highlightErrorLine({
+            error: dbmlError,
+            model: editorRef.current?.getModel(),
+            editorDecorationsCollection: decorationsCollection.current,
+          });
 
-            const result = generateDBMLFromDiagram(currentDiagram);
-
-            // Handle errors
-            if (result.error) {
-                toast({
-                    title: 'DBML Export Error',
-                    description: `Could not generate DBML: ${result.error.substring(0, 100)}${result.error.length > 100 ? '...' : ''}`,
-                    variant: 'destructive',
-                });
-            }
-
-            setStandardDbml(result.standardDbml);
-            setInlineDbml(result.inlineDbml);
-            setIsLoading(false);
-        };
-
-        setTimeout(() => generateDBML(), 0);
-    }, [currentDiagram, toast, isEditMode]);
-
-    // Update editedDbml when dbmlToDisplay changes
-    useEffect(() => {
-        if (!isLoading && dbmlToDisplay && !isEditMode) {
-            setEditedDbml(dbmlToDisplay);
-            lastDBMLChange.current = dbmlToDisplay;
+          setErrorMessage(
+            t('import_dbml_dialog.error.description') +
+              ` (1 error found - in line ${dbmlError.line})`
+          );
         }
-    }, [dbmlToDisplay, isLoading, isEditMode]);
+      }
+    },
+    [
+      t,
+      originalDiagram,
+      currentDiagram,
+      resetDiff,
+      loadDiagramFromData,
+      calculateDiff,
+      databaseType,
+    ]
+  );
 
-    // Create the showDiff function
-    const showDiff = useCallback(
-        async (dbmlContent: string) => {
-            clearErrorHighlight(decorationsCollection.current);
-            setErrorMessage(undefined);
-            try {
-                const diagramFromDBML: Diagram = await importDBMLToDiagram(
-                    dbmlContent,
-                    { databaseType }
-                );
+  const debouncedShowDiff = useDebounce(showDiff, 1000);
 
-                const sourceDiagram: Diagram =
-                    originalDiagram ?? currentDiagram;
+  useEffect(() => {
+    if (!isEditMode || !editedDbml) {
+      return;
+    }
 
-                const targetDiagram: Diagram = {
-                    ...sourceDiagram,
-                    tables: diagramFromDBML.tables,
-                    relationships: diagramFromDBML.relationships,
-                    customTypes: diagramFromDBML.customTypes,
-                };
+    // Only calculate diff if the DBML has changed
+    if (editedDbml === lastDBMLChange.current) {
+      return;
+    }
 
-                const newDiagram = applyDBMLChanges({
-                    sourceDiagram,
-                    targetDiagram,
-                });
+    lastDBMLChange.current = editedDbml;
 
-                if (originalDiagram) {
-                    resetDiff();
-                    loadDiagramFromData(originalDiagram);
-                }
+    debouncedShowDiff(editedDbml);
+  }, [editedDbml, isEditMode, debouncedShowDiff]);
 
-                calculateDiff({
-                    diagram: sourceDiagram,
-                    newDiagram,
-                    options: { summaryOnly: true },
-                });
-            } catch (error) {
-                const dbmlError = parseDBMLError(error);
+  const acceptChanges = useCallback(async () => {
+    if (!editedDbml) return;
+    if (!newDiagram) return;
 
-                if (dbmlError) {
-                    highlightErrorLine({
-                        error: dbmlError,
-                        model: editorRef.current?.getModel(),
-                        editorDecorationsCollection:
-                            decorationsCollection.current,
-                    });
+    showLoader();
 
-                    setErrorMessage(
-                        t('import_dbml_dialog.error.description') +
-                            ` (1 error found - in line ${dbmlError.line})`
-                    );
-                }
-            }
-        },
-        [
-            t,
-            originalDiagram,
-            currentDiagram,
-            resetDiff,
-            loadDiagramFromData,
-            calculateDiff,
-            databaseType,
-        ]
-    );
+    await updateDiagramData(newDiagram, { forceUpdateStorage: true });
 
-    const debouncedShowDiff = useDebounce(showDiff, 1000);
+    resetDiff();
+    setEditedDbml(editedDbml);
+    setIsEditMode(false);
+    lastDBMLChange.current = editedDbml;
+    hideLoader();
+  }, [
+    editedDbml,
+    updateDiagramData,
+    newDiagram,
+    resetDiff,
+    showLoader,
+    hideLoader,
+  ]);
 
-    useEffect(() => {
-        if (!isEditMode || !editedDbml) {
-            return;
+  const undoChanges = useCallback(() => {
+    if (!editedDbml) return;
+    if (!originalDiagram) return;
+
+    loadDiagramFromData(originalDiagram);
+    setIsEditMode(false);
+    resetDiff();
+    setEditedDbml(dbmlToDisplay);
+    lastDBMLChange.current = dbmlToDisplay;
+  }, [
+    editedDbml,
+    loadDiagramFromData,
+    originalDiagram,
+    resetDiff,
+    dbmlToDisplay,
+  ]);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    return () => {
+      isMountedRef.current = false;
+
+      if (emphasisTimeoutRef.current) {
+        clearTimeout(emphasisTimeoutRef.current);
+      }
+
+      if (readOnlyDisposableRef.current) {
+        readOnlyDisposableRef.current.dispose();
+        readOnlyDisposableRef.current = undefined;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const currentUndoChanges = undoChanges;
+
+    return () => {
+      setTimeout(() => {
+        if (!isMountedRef.current) {
+          currentUndoChanges();
         }
+      }, 0);
+    };
+  }, [undoChanges]);
 
-        // Only calculate diff if the DBML has changed
-        if (editedDbml === lastDBMLChange.current) {
-            return;
+  return (
+    <>
+      <CodeSnippet
+        code={editedDbml}
+        loading={isLoading}
+        actionsTooltipSide="right"
+        className="my-0.5"
+        allowCopy={!isEditMode}
+        actions={
+          isEditMode && hasDiff
+            ? [
+                {
+                  label: 'Accept Changes',
+                  icon: Check,
+                  onClick: acceptChanges,
+                  className:
+                    'h-7 items-center gap-1.5 rounded-md border border-green-200 bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-600 shadow-sm hover:bg-green-100 dark:border-green-800 dark:bg-green-800 dark:text-green-200 dark:hover:bg-green-700',
+                },
+                {
+                  label: 'Undo Changes',
+                  icon: Undo2,
+                  onClick: undoChanges,
+                  className:
+                    'h-7 items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-600 shadow-sm hover:bg-red-100 dark:border-red-800 dark:bg-red-800 dark:text-red-200 dark:hover:bg-red-700',
+                },
+              ]
+            : isEditMode && !hasDiff
+              ? [
+                  {
+                    label: 'View',
+                    icon: PencilOff,
+                    onClick: () => setIsEditMode((prev) => !prev),
+                  },
+                ]
+              : [
+                  {
+                    label: `Show ${dbmlFormat === 'inline' ? 'Standard' : 'Inline'} Refs`,
+                    icon: ArrowLeftRight,
+                    onClick: toggleFormat,
+                  },
+                  ...(!readonly
+                    ? [
+                        {
+                          label: 'Edit',
+                          icon: Pencil,
+                          onClick: () => setIsEditMode((prev) => !prev),
+                          className: isEditButtonEmphasized
+                            ? 'dbml-edit-button-emphasis'
+                            : undefined,
+                        },
+                      ]
+                    : []),
+                ]
         }
-
-        lastDBMLChange.current = editedDbml;
-
-        debouncedShowDiff(editedDbml);
-    }, [editedDbml, isEditMode, debouncedShowDiff]);
-
-    const acceptChanges = useCallback(async () => {
-        if (!editedDbml) return;
-        if (!newDiagram) return;
-
-        showLoader();
-
-        await updateDiagramData(newDiagram, { forceUpdateStorage: true });
-
-        resetDiff();
-        setEditedDbml(editedDbml);
-        setIsEditMode(false);
-        lastDBMLChange.current = editedDbml;
-        hideLoader();
-    }, [
-        editedDbml,
-        updateDiagramData,
-        newDiagram,
-        resetDiff,
-        showLoader,
-        hideLoader,
-    ]);
-
-    const undoChanges = useCallback(() => {
-        if (!editedDbml) return;
-        if (!originalDiagram) return;
-
-        loadDiagramFromData(originalDiagram);
-        setIsEditMode(false);
-        resetDiff();
-        setEditedDbml(dbmlToDisplay);
-        lastDBMLChange.current = dbmlToDisplay;
-    }, [
-        editedDbml,
-        loadDiagramFromData,
-        originalDiagram,
-        resetDiff,
-        dbmlToDisplay,
-    ]);
-
-    useEffect(() => {
-        isMountedRef.current = true;
-
-        return () => {
-            isMountedRef.current = false;
-
-            if (emphasisTimeoutRef.current) {
-                clearTimeout(emphasisTimeoutRef.current);
-            }
-
-            if (readOnlyDisposableRef.current) {
-                readOnlyDisposableRef.current.dispose();
-                readOnlyDisposableRef.current = undefined;
-            }
-        };
-    }, []);
-
-    useEffect(() => {
-        const currentUndoChanges = undoChanges;
-
-        return () => {
-            setTimeout(() => {
-                if (!isMountedRef.current) {
-                    currentUndoChanges();
-                }
-            }, 0);
-        };
-    }, [undoChanges]);
-
-    return (
-        <>
-            <CodeSnippet
-                code={editedDbml}
-                loading={isLoading}
-                actionsTooltipSide="right"
-                className="my-0.5"
-                allowCopy={!isEditMode}
-                actions={
-                    isEditMode && hasDiff
-                        ? [
-                              {
-                                  label: 'Accept Changes',
-                                  icon: Check,
-                                  onClick: acceptChanges,
-                                  className:
-                                      'h-7 items-center gap-1.5 rounded-md border border-green-200 bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-600 shadow-sm hover:bg-green-100 dark:border-green-800 dark:bg-green-800 dark:text-green-200 dark:hover:bg-green-700',
-                              },
-                              {
-                                  label: 'Undo Changes',
-                                  icon: Undo2,
-                                  onClick: undoChanges,
-                                  className:
-                                      'h-7 items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-600 shadow-sm hover:bg-red-100 dark:border-red-800 dark:bg-red-800 dark:text-red-200 dark:hover:bg-red-700',
-                              },
-                          ]
-                        : isEditMode && !hasDiff
-                          ? [
-                                {
-                                    label: 'View',
-                                    icon: PencilOff,
-                                    onClick: () =>
-                                        setIsEditMode((prev) => !prev),
-                                },
-                            ]
-                          : [
-                                {
-                                    label: `Show ${dbmlFormat === 'inline' ? 'Standard' : 'Inline'} Refs`,
-                                    icon: ArrowLeftRight,
-                                    onClick: toggleFormat,
-                                },
-                                ...(!readonly
-                                    ? [
-                                          {
-                                              label: 'Edit',
-                                              icon: Pencil,
-                                              onClick: () =>
-                                                  setIsEditMode(
-                                                      (prev) => !prev
-                                                  ),
-                                              className: isEditButtonEmphasized
-                                                  ? 'dbml-edit-button-emphasis'
-                                                  : undefined,
-                                          },
-                                      ]
-                                    : []),
-                            ]
-                }
-                editorProps={{
-                    height: '100%',
-                    defaultLanguage: 'dbml',
-                    beforeMount: setupDBMLLanguage,
-                    theme: getEditorTheme(effectiveTheme),
-                    onMount: handleEditorDidMount,
-                    options: {
-                        wordWrap: 'off',
-                        mouseWheelZoom: false,
-                        readOnly: !isEditMode,
-                    },
-                    onChange: (value) => {
-                        setEditedDbml(value ?? '');
-                    },
-                }}
-            />
-            {warningMessage ? (
-                <div className="my-2 rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-900/50 dark:bg-blue-950/20">
-                    <div className="flex items-start gap-2">
-                        <AlertCircle className="mt-0.5 size-4 shrink-0 text-blue-600 dark:text-blue-400" />
-                        <div className="flex-1">
-                            <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                                Warning
-                            </p>
-                            <p className="mt-0.5 text-xs text-blue-700 dark:text-blue-300">
-                                {warningMessage}
-                            </p>
-                        </div>
-                        <button
-                            onClick={() => setWarningMessage(undefined)}
-                            className="rounded p-0.5 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-blue-900/50"
-                            aria-label="Close warning"
-                        >
-                            <X className="size-3.5" />
-                        </button>
-                    </div>
-                </div>
-            ) : null}
-            {errorMessage ? (
-                <div className="my-2 rounded-md border border-orange-200 bg-orange-50 p-3 dark:border-orange-900/50 dark:bg-orange-950/20">
-                    <div className="flex gap-2">
-                        <AlertCircle className="mt-0.5 size-4 shrink-0 text-orange-600 dark:text-orange-400" />
-                        <div className="flex-1">
-                            <p className="text-sm font-medium text-orange-800 dark:text-orange-200">
-                                Syntax Error
-                            </p>
-                            <p className="mt-0.5 text-xs text-orange-700 dark:text-orange-300">
-                                {errorMessage ||
-                                    t('import_dbml_dialog.error.description')}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            ) : null}
-        </>
-    );
+        editorProps={{
+          height: '100%',
+          defaultLanguage: 'dbml',
+          beforeMount: setupDBMLLanguage,
+          theme: getEditorTheme(effectiveTheme),
+          onMount: handleEditorDidMount,
+          options: {
+            wordWrap: 'off',
+            mouseWheelZoom: false,
+            readOnly: !isEditMode,
+          },
+          onChange: (value) => {
+            setEditedDbml(value ?? '');
+          },
+        }}
+      />
+      {warningMessage ? (
+        <div className="my-2 rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-900/50 dark:bg-blue-950/20">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="mt-0.5 size-4 shrink-0 text-blue-600 dark:text-blue-400" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                Warning
+              </p>
+              <p className="mt-0.5 text-xs text-blue-700 dark:text-blue-300">
+                {warningMessage}
+              </p>
+            </div>
+            <button
+              onClick={() => setWarningMessage(undefined)}
+              className="rounded p-0.5 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-blue-900/50"
+              aria-label="Close warning"
+            >
+              <X className="size-3.5" />
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {errorMessage ? (
+        <div className="my-2 rounded-md border border-orange-200 bg-orange-50 p-3 dark:border-orange-900/50 dark:bg-orange-950/20">
+          <div className="flex gap-2">
+            <AlertCircle className="mt-0.5 size-4 shrink-0 text-orange-600 dark:text-orange-400" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-orange-800 dark:text-orange-200">
+                Syntax Error
+              </p>
+              <p className="mt-0.5 text-xs text-orange-700 dark:text-orange-300">
+                {errorMessage || t('import_dbml_dialog.error.description')}
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
 };

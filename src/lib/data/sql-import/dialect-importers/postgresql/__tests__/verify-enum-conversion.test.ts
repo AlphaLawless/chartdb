@@ -1,12 +1,12 @@
-import { describe, it, expect } from 'vitest';
-import { fromPostgres } from '../postgresql';
-import { convertToChartDBDiagram } from '../../../common';
+import { describe, expect, it } from 'vitest';
 import { DatabaseType } from '@/lib/domain/database-type';
 import { DBCustomTypeKind } from '@/lib/domain/db-custom-type';
+import { convertToChartDBDiagram } from '../../../common';
+import { fromPostgres } from '../postgresql';
 
 describe('PostgreSQL Enum Type Conversion to Diagram', () => {
-    it('should convert enum types to custom types in diagram', async () => {
-        const sql = `
+  it('should convert enum types to custom types in diagram', async () => {
+    const sql = `
 CREATE TYPE wizard_rank AS ENUM ('apprentice', 'master', 'archmage');
 CREATE TYPE spell_element AS ENUM ('fire', 'water', 'both');
 
@@ -22,65 +22,63 @@ CREATE TABLE spellbooks (
     primary_element spell_element NOT NULL
 );`;
 
-        // Parse SQL
-        const parserResult = await fromPostgres(sql);
+    // Parse SQL
+    const parserResult = await fromPostgres(sql);
 
-        // Convert to diagram
-        const diagram = convertToChartDBDiagram(
-            parserResult,
-            DatabaseType.POSTGRESQL,
-            DatabaseType.POSTGRESQL
-        );
+    // Convert to diagram
+    const diagram = convertToChartDBDiagram(
+      parserResult,
+      DatabaseType.POSTGRESQL,
+      DatabaseType.POSTGRESQL
+    );
 
-        // Check that custom types were created in the diagram
-        expect(diagram.customTypes).toBeDefined();
-        expect(diagram.customTypes).toHaveLength(2);
+    // Check that custom types were created in the diagram
+    expect(diagram.customTypes).toBeDefined();
+    expect(diagram.customTypes).toHaveLength(2);
 
-        // Check first custom type
-        const wizardRankType = diagram.customTypes!.find(
-            (t) => t.name === 'wizard_rank'
-        );
-        expect(wizardRankType).toBeDefined();
-        expect(wizardRankType!.kind).toBe(DBCustomTypeKind.enum);
-        expect(wizardRankType!.values).toEqual([
-            'apprentice',
-            'master',
-            'archmage',
-        ]);
-        expect(wizardRankType!.schema).toBe('public');
+    // Check first custom type
+    const wizardRankType = diagram.customTypes!.find(
+      (t) => t.name === 'wizard_rank'
+    );
+    expect(wizardRankType).toBeDefined();
+    expect(wizardRankType!.kind).toBe(DBCustomTypeKind.enum);
+    expect(wizardRankType!.values).toEqual([
+      'apprentice',
+      'master',
+      'archmage',
+    ]);
+    expect(wizardRankType!.schema).toBe('public');
 
-        // Check second custom type
-        const spellElementType = diagram.customTypes!.find(
-            (t) => t.name === 'spell_element'
-        );
-        expect(spellElementType).toBeDefined();
-        expect(spellElementType!.kind).toBe(DBCustomTypeKind.enum);
-        expect(spellElementType!.values).toEqual(['fire', 'water', 'both']);
+    // Check second custom type
+    const spellElementType = diagram.customTypes!.find(
+      (t) => t.name === 'spell_element'
+    );
+    expect(spellElementType).toBeDefined();
+    expect(spellElementType!.kind).toBe(DBCustomTypeKind.enum);
+    expect(spellElementType!.values).toEqual(['fire', 'water', 'both']);
 
-        // Check that tables use the enum types
-        const spellbooksTable = diagram.tables!.find(
-            (t) => t.name === 'spellbooks'
-        );
-        expect(spellbooksTable).toBeDefined();
+    // Check that tables use the enum types
+    const spellbooksTable = diagram.tables!.find(
+      (t) => t.name === 'spellbooks'
+    );
+    expect(spellbooksTable).toBeDefined();
 
-        // Find columns that use enum types
-        const rankField = spellbooksTable!.fields.find(
-            (f) => f.name === 'rank'
-        );
-        expect(rankField).toBeDefined();
-        // The type should be preserved as the enum name
-        expect(rankField!.type.name.toLowerCase()).toBe('wizard_rank');
+    // Find columns that use enum types
+    const rankField = spellbooksTable!.fields.find((f) => f.name === 'rank');
+    expect(rankField).toBeDefined();
+    // The type should be preserved as the enum name
+    expect(rankField!.type.name.toLowerCase()).toBe('wizard_rank');
 
-        const elementField = spellbooksTable!.fields.find(
-            (f) => f.name === 'primary_element'
-        );
-        expect(elementField).toBeDefined();
-        expect(elementField!.type.name.toLowerCase()).toBe('spell_element');
-    });
+    const elementField = spellbooksTable!.fields.find(
+      (f) => f.name === 'primary_element'
+    );
+    expect(elementField).toBeDefined();
+    expect(elementField!.type.name.toLowerCase()).toBe('spell_element');
+  });
 
-    it('should handle fantasy realm SQL with all enum types', async () => {
-        // Fantasy realm example with all enum types
-        const sql = `
+  it('should handle fantasy realm SQL with all enum types', async () => {
+    // Fantasy realm example with all enum types
+    const sql = `
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TYPE wizard_rank AS ENUM ('apprentice', 'journeyman', 'master', 'archmage', 'legendary');
@@ -114,51 +112,51 @@ CREATE TABLE dragons (
     mood dragon_mood NOT NULL
 );`;
 
-        const parserResult = await fromPostgres(sql);
-        const diagram = convertToChartDBDiagram(
-            parserResult,
-            DatabaseType.POSTGRESQL,
-            DatabaseType.POSTGRESQL
-        );
+    const parserResult = await fromPostgres(sql);
+    const diagram = convertToChartDBDiagram(
+      parserResult,
+      DatabaseType.POSTGRESQL,
+      DatabaseType.POSTGRESQL
+    );
 
-        // Should have all 5 enum types
-        expect(diagram.customTypes).toBeDefined();
-        expect(diagram.customTypes).toHaveLength(5);
+    // Should have all 5 enum types
+    expect(diagram.customTypes).toBeDefined();
+    expect(diagram.customTypes).toHaveLength(5);
 
-        // Check all enum types are present
-        const enumNames = diagram.customTypes!.map((t) => t.name).sort();
-        expect(enumNames).toEqual([
-            'dragon_mood',
-            'magic_element',
-            'quest_status',
-            'spell_frequency',
-            'wizard_rank',
-        ]);
+    // Check all enum types are present
+    const enumNames = diagram.customTypes!.map((t) => t.name).sort();
+    expect(enumNames).toEqual([
+      'dragon_mood',
+      'magic_element',
+      'quest_status',
+      'spell_frequency',
+      'wizard_rank',
+    ]);
 
-        // Verify each enum has the correct values
-        const spellFreq = diagram.customTypes!.find(
-            (t) => t.name === 'spell_frequency'
-        );
-        expect(spellFreq!.values).toEqual(['daily', 'weekly']);
+    // Verify each enum has the correct values
+    const spellFreq = diagram.customTypes!.find(
+      (t) => t.name === 'spell_frequency'
+    );
+    expect(spellFreq!.values).toEqual(['daily', 'weekly']);
 
-        const questStatus = diagram.customTypes!.find(
-            (t) => t.name === 'quest_status'
-        );
-        expect(questStatus!.values).toEqual([
-            'pending',
-            'active',
-            'completed',
-            'failed',
-            'abandoned',
-        ]);
+    const questStatus = diagram.customTypes!.find(
+      (t) => t.name === 'quest_status'
+    );
+    expect(questStatus!.values).toEqual([
+      'pending',
+      'active',
+      'completed',
+      'failed',
+      'abandoned',
+    ]);
 
-        // Check that tables reference the enum types correctly
-        const spellbooksTable = diagram.tables!.find(
-            (t) => t.name === 'spellbooks'
-        );
-        const castFreqField = spellbooksTable!.fields.find(
-            (f) => f.name === 'cast_frequency'
-        );
-        expect(castFreqField!.type.name.toLowerCase()).toBe('spell_frequency');
-    });
+    // Check that tables reference the enum types correctly
+    const spellbooksTable = diagram.tables!.find(
+      (t) => t.name === 'spellbooks'
+    );
+    const castFreqField = spellbooksTable!.fields.find(
+      (f) => f.name === 'cast_frequency'
+    );
+    expect(castFreqField!.type.name.toLowerCase()).toBe('spell_frequency');
+  });
 });

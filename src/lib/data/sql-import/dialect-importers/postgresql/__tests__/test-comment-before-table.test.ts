@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { fromPostgres } from '../postgresql';
 
 describe('Table with Comment Before CREATE TABLE', () => {
-    it('should parse table with single-line comment before CREATE TABLE', async () => {
-        const sql = `
+  it('should parse table with single-line comment before CREATE TABLE', async () => {
+    const sql = `
 -- Junction table for tracking which crystals power which enchantments.
 CREATE TABLE crystal_enchantments (
     crystal_id UUID NOT NULL REFERENCES crystals(id) ON DELETE CASCADE,
@@ -11,22 +11,22 @@ CREATE TABLE crystal_enchantments (
     PRIMARY KEY (crystal_id, enchantment_id)
 );`;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        console.log('\nDebug info:');
-        console.log('Tables found:', result.tables.length);
-        console.log(
-            'Table names:',
-            result.tables.map((t) => t.name)
-        );
+    console.log('\nDebug info:');
+    console.log('Tables found:', result.tables.length);
+    console.log(
+      'Table names:',
+      result.tables.map((t) => t.name)
+    );
 
-        expect(result.tables).toHaveLength(1);
-        expect(result.tables[0].name).toBe('crystal_enchantments');
-        expect(result.tables[0].columns).toHaveLength(2);
-    });
+    expect(result.tables).toHaveLength(1);
+    expect(result.tables[0].name).toBe('crystal_enchantments');
+    expect(result.tables[0].columns).toHaveLength(2);
+  });
 
-    it('should handle various comment formats before CREATE TABLE', async () => {
-        const sql = `
+  it('should handle various comment formats before CREATE TABLE', async () => {
+    const sql = `
 -- This is a wizards table
 CREATE TABLE wizards (
     id UUID PRIMARY KEY
@@ -52,20 +52,20 @@ CREATE TABLE spell_schools (
     id INTEGER PRIMARY KEY
 );`;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(4);
-        const tableNames = result.tables.map((t) => t.name).sort();
-        expect(tableNames).toEqual([
-            'artifacts',
-            'quests',
-            'spell_schools',
-            'wizards',
-        ]);
-    });
+    expect(result.tables).toHaveLength(4);
+    const tableNames = result.tables.map((t) => t.name).sort();
+    expect(tableNames).toEqual([
+      'artifacts',
+      'quests',
+      'spell_schools',
+      'wizards',
+    ]);
+  });
 
-    it('should not confuse comment-only statements with tables', async () => {
-        const sql = `
+  it('should not confuse comment-only statements with tables', async () => {
+    const sql = `
 -- This is just a comment, not a table
 -- Even though it mentions CREATE TABLE in the comment
 -- It should not be parsed as a table
@@ -76,9 +76,9 @@ CREATE TABLE ancient_tome (
 
 -- Another standalone comment`;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(1);
-        expect(result.tables[0].name).toBe('ancient_tome');
-    });
+    expect(result.tables).toHaveLength(1);
+    expect(result.tables[0].name).toBe('ancient_tome');
+  });
 });

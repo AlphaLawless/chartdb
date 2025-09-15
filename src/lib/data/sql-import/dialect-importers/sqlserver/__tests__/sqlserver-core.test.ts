@@ -1,24 +1,24 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { fromSQLServer } from '../sqlserver';
 
 describe('SQL Server Core Parser Tests', () => {
-    it('should parse basic tables', async () => {
-        const sql = `
+  it('should parse basic tables', async () => {
+    const sql = `
             CREATE TABLE wizards (
                 id INT PRIMARY KEY,
                 name NVARCHAR(255) NOT NULL
             );
         `;
 
-        const result = await fromSQLServer(sql);
+    const result = await fromSQLServer(sql);
 
-        expect(result.tables).toHaveLength(1);
-        expect(result.tables[0].name).toBe('wizards');
-        expect(result.tables[0].columns).toHaveLength(2);
-    });
+    expect(result.tables).toHaveLength(1);
+    expect(result.tables[0].name).toBe('wizards');
+    expect(result.tables[0].columns).toHaveLength(2);
+  });
 
-    it('should parse tables with schemas', async () => {
-        const sql = `
+  it('should parse tables with schemas', async () => {
+    const sql = `
             CREATE TABLE [magic].[spells] (
                 id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
                 name NVARCHAR(100) NOT NULL,
@@ -31,20 +31,18 @@ describe('SQL Server Core Parser Tests', () => {
             );
         `;
 
-        const result = await fromSQLServer(sql);
+    const result = await fromSQLServer(sql);
 
-        expect(result.tables).toHaveLength(2);
-        expect(result.tables.find((t) => t.name === 'spells')).toBeDefined();
-        expect(result.tables.find((t) => t.name === 'spells')?.schema).toBe(
-            'magic'
-        );
-        expect(result.tables.find((t) => t.name === 'wizards')?.schema).toBe(
-            'dbo'
-        );
-    });
+    expect(result.tables).toHaveLength(2);
+    expect(result.tables.find((t) => t.name === 'spells')).toBeDefined();
+    expect(result.tables.find((t) => t.name === 'spells')?.schema).toBe(
+      'magic'
+    );
+    expect(result.tables.find((t) => t.name === 'wizards')?.schema).toBe('dbo');
+  });
 
-    it('should parse foreign key relationships', async () => {
-        const sql = `
+  it('should parse foreign key relationships', async () => {
+    const sql = `
             CREATE TABLE guilds (id INT PRIMARY KEY);
             CREATE TABLE mages (
                 id INT PRIMARY KEY,
@@ -52,18 +50,18 @@ describe('SQL Server Core Parser Tests', () => {
             );
         `;
 
-        const result = await fromSQLServer(sql);
+    const result = await fromSQLServer(sql);
 
-        expect(result.tables).toHaveLength(2);
-        expect(result.relationships).toHaveLength(1);
-        expect(result.relationships[0].sourceTable).toBe('mages');
-        expect(result.relationships[0].targetTable).toBe('guilds');
-        expect(result.relationships[0].sourceColumn).toBe('guild_id');
-        expect(result.relationships[0].targetColumn).toBe('id');
-    });
+    expect(result.tables).toHaveLength(2);
+    expect(result.relationships).toHaveLength(1);
+    expect(result.relationships[0].sourceTable).toBe('mages');
+    expect(result.relationships[0].targetTable).toBe('guilds');
+    expect(result.relationships[0].sourceColumn).toBe('guild_id');
+    expect(result.relationships[0].targetColumn).toBe('id');
+  });
 
-    it('should parse foreign keys with schema references', async () => {
-        const sql = `
+  it('should parse foreign keys with schema references', async () => {
+    const sql = `
             CREATE TABLE [magic].[schools] (
                 id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
                 name NVARCHAR(100) NOT NULL
@@ -77,18 +75,18 @@ describe('SQL Server Core Parser Tests', () => {
             );
         `;
 
-        const result = await fromSQLServer(sql);
+    const result = await fromSQLServer(sql);
 
-        expect(result.tables).toHaveLength(2);
-        expect(result.relationships).toHaveLength(1);
-        expect(result.relationships[0].sourceTable).toBe('towers');
-        expect(result.relationships[0].targetTable).toBe('schools');
-        expect(result.relationships[0].sourceSchema).toBe('magic');
-        expect(result.relationships[0].targetSchema).toBe('magic');
-    });
+    expect(result.tables).toHaveLength(2);
+    expect(result.relationships).toHaveLength(1);
+    expect(result.relationships[0].sourceTable).toBe('towers');
+    expect(result.relationships[0].targetTable).toBe('schools');
+    expect(result.relationships[0].sourceSchema).toBe('magic');
+    expect(result.relationships[0].targetSchema).toBe('magic');
+  });
 
-    it('should handle GO statements and SQL Server specific syntax', async () => {
-        const sql = `
+  it('should handle GO statements and SQL Server specific syntax', async () => {
+    const sql = `
             USE [MagicalRealm]
             GO
 
@@ -111,18 +109,18 @@ describe('SQL Server Core Parser Tests', () => {
             GO
         `;
 
-        const result = await fromSQLServer(sql);
+    const result = await fromSQLServer(sql);
 
-        expect(result.tables).toHaveLength(1);
-        expect(result.tables[0].name).toBe('enchantments');
-        expect(result.tables[0].columns).toHaveLength(4);
-        expect(
-            result.tables[0].columns.find((c) => c.name === 'Power')?.type
-        ).toBe('decimal');
-    });
+    expect(result.tables).toHaveLength(1);
+    expect(result.tables[0].name).toBe('enchantments');
+    expect(result.tables[0].columns).toHaveLength(4);
+    expect(result.tables[0].columns.find((c) => c.name === 'Power')?.type).toBe(
+      'decimal'
+    );
+  });
 
-    it('should parse ALTER TABLE ADD CONSTRAINT for foreign keys', async () => {
-        const sql = `
+  it('should parse ALTER TABLE ADD CONSTRAINT for foreign keys', async () => {
+    const sql = `
             CREATE TABLE [calibration].[Calibration] (
                 [Id] [uniqueidentifier] NOT NULL PRIMARY KEY,
                 [Average] [decimal](18, 2) NOT NULL
@@ -139,19 +137,19 @@ describe('SQL Server Core Parser Tests', () => {
                 REFERENCES [calibration].[Calibration]([Id]);
         `;
 
-        const result = await fromSQLServer(sql);
+    const result = await fromSQLServer(sql);
 
-        expect(result.tables).toHaveLength(2);
-        expect(result.relationships).toHaveLength(1);
-        expect(result.relationships[0].sourceTable).toBe('CalibrationProcess');
-        expect(result.relationships[0].targetTable).toBe('Calibration');
-        expect(result.relationships[0].name).toBe(
-            'FK_CalibrationProcess_Calibration'
-        );
-    });
+    expect(result.tables).toHaveLength(2);
+    expect(result.relationships).toHaveLength(1);
+    expect(result.relationships[0].sourceTable).toBe('CalibrationProcess');
+    expect(result.relationships[0].targetTable).toBe('Calibration');
+    expect(result.relationships[0].name).toBe(
+      'FK_CalibrationProcess_Calibration'
+    );
+  });
 
-    it('should handle multiple schemas from the test file', async () => {
-        const sql = `
+  it('should handle multiple schemas from the test file', async () => {
+    const sql = `
             CREATE SCHEMA [magic]
             GO
             CREATE SCHEMA [artifacts]
@@ -170,20 +168,18 @@ describe('SQL Server Core Parser Tests', () => {
             );
         `;
 
-        const result = await fromSQLServer(sql);
+    const result = await fromSQLServer(sql);
 
-        expect(result.tables).toHaveLength(2);
-        expect(result.tables.find((t) => t.schema === 'magic')).toBeDefined();
-        expect(
-            result.tables.find((t) => t.schema === 'artifacts')
-        ).toBeDefined();
-        expect(result.relationships).toHaveLength(1);
-        expect(result.relationships[0].sourceSchema).toBe('artifacts');
-        expect(result.relationships[0].targetSchema).toBe('magic');
-    });
+    expect(result.tables).toHaveLength(2);
+    expect(result.tables.find((t) => t.schema === 'magic')).toBeDefined();
+    expect(result.tables.find((t) => t.schema === 'artifacts')).toBeDefined();
+    expect(result.relationships).toHaveLength(1);
+    expect(result.relationships[0].sourceSchema).toBe('artifacts');
+    expect(result.relationships[0].targetSchema).toBe('magic');
+  });
 
-    it('should handle SQL Server data types correctly', async () => {
-        const sql = `
+  it('should handle SQL Server data types correctly', async () => {
+    const sql = `
             CREATE TABLE [magic].[spell_components] (
                 [Id] [uniqueidentifier] NOT NULL,
                 [Name] [nvarchar](255) NOT NULL,
@@ -199,37 +195,31 @@ describe('SQL Server Core Parser Tests', () => {
             );
         `;
 
-        const result = await fromSQLServer(sql);
+    const result = await fromSQLServer(sql);
 
-        expect(result.tables).toHaveLength(1);
-        const columns = result.tables[0].columns;
+    expect(result.tables).toHaveLength(1);
+    const columns = result.tables[0].columns;
 
-        expect(columns.find((c) => c.name === 'Id')?.type).toBe(
-            'uniqueidentifier'
-        );
-        expect(columns.find((c) => c.name === 'Name')?.type).toBe('nvarchar');
-        expect(columns.find((c) => c.name === 'Quantity')?.type).toBe('int');
-        expect(columns.find((c) => c.name === 'Weight')?.type).toBe('decimal');
-        expect(columns.find((c) => c.name === 'IsPowerful')?.type).toBe('bit');
-        expect(columns.find((c) => c.name === 'DiscoveredAt')?.type).toBe(
-            'datetime2'
-        );
-        expect(columns.find((c) => c.name === 'Description')?.type).toBe(
-            'nvarchar'
-        );
-        expect(columns.find((c) => c.name === 'RarityLevel')?.type).toBe(
-            'tinyint'
-        );
-        expect(columns.find((c) => c.name === 'MarketValue')?.type).toBe(
-            'money'
-        );
-        expect(columns.find((c) => c.name === 'AlchemicalFormula')?.type).toBe(
-            'xml'
-        );
-    });
+    expect(columns.find((c) => c.name === 'Id')?.type).toBe('uniqueidentifier');
+    expect(columns.find((c) => c.name === 'Name')?.type).toBe('nvarchar');
+    expect(columns.find((c) => c.name === 'Quantity')?.type).toBe('int');
+    expect(columns.find((c) => c.name === 'Weight')?.type).toBe('decimal');
+    expect(columns.find((c) => c.name === 'IsPowerful')?.type).toBe('bit');
+    expect(columns.find((c) => c.name === 'DiscoveredAt')?.type).toBe(
+      'datetime2'
+    );
+    expect(columns.find((c) => c.name === 'Description')?.type).toBe(
+      'nvarchar'
+    );
+    expect(columns.find((c) => c.name === 'RarityLevel')?.type).toBe('tinyint');
+    expect(columns.find((c) => c.name === 'MarketValue')?.type).toBe('money');
+    expect(columns.find((c) => c.name === 'AlchemicalFormula')?.type).toBe(
+      'xml'
+    );
+  });
 
-    it('should handle IDENTITY columns', async () => {
-        const sql = `
+  it('should handle IDENTITY columns', async () => {
+    const sql = `
             CREATE TABLE [dbo].[magical_creatures] (
                 [Id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
                 [Name] [nvarchar](100) NOT NULL,
@@ -237,15 +227,15 @@ describe('SQL Server Core Parser Tests', () => {
             );
         `;
 
-        const result = await fromSQLServer(sql);
+    const result = await fromSQLServer(sql);
 
-        expect(result.tables).toHaveLength(1);
-        const idColumn = result.tables[0].columns.find((c) => c.name === 'Id');
-        expect(idColumn?.increment).toBe(true);
-    });
+    expect(result.tables).toHaveLength(1);
+    const idColumn = result.tables[0].columns.find((c) => c.name === 'Id');
+    expect(idColumn?.increment).toBe(true);
+  });
 
-    it('should parse composite primary keys', async () => {
-        const sql = `
+  it('should parse composite primary keys', async () => {
+    const sql = `
             CREATE TABLE [magic].[spell_ingredients] (
                 [SpellId] [uniqueidentifier] NOT NULL,
                 [IngredientId] [uniqueidentifier] NOT NULL,
@@ -258,21 +248,21 @@ describe('SQL Server Core Parser Tests', () => {
             );
         `;
 
-        const result = await fromSQLServer(sql);
+    const result = await fromSQLServer(sql);
 
-        expect(result.tables).toHaveLength(1);
-        const table = result.tables[0];
-        expect(table.columns.filter((c) => c.primaryKey)).toHaveLength(2);
-        expect(
-            table.columns.find((c) => c.name === 'SpellId')?.primaryKey
-        ).toBe(true);
-        expect(
-            table.columns.find((c) => c.name === 'IngredientId')?.primaryKey
-        ).toBe(true);
-    });
+    expect(result.tables).toHaveLength(1);
+    const table = result.tables[0];
+    expect(table.columns.filter((c) => c.primaryKey)).toHaveLength(2);
+    expect(table.columns.find((c) => c.name === 'SpellId')?.primaryKey).toBe(
+      true
+    );
+    expect(
+      table.columns.find((c) => c.name === 'IngredientId')?.primaryKey
+    ).toBe(true);
+  });
 
-    it('should handle unique constraints', async () => {
-        const sql = `
+  it('should handle unique constraints', async () => {
+    const sql = `
             CREATE TABLE [dbo].[arcane_libraries] (
                 [Id] [uniqueidentifier] NOT NULL PRIMARY KEY,
                 [Code] [nvarchar](50) NOT NULL,
@@ -281,19 +271,17 @@ describe('SQL Server Core Parser Tests', () => {
             );
         `;
 
-        const result = await fromSQLServer(sql);
+    const result = await fromSQLServer(sql);
 
-        expect(result.tables).toHaveLength(1);
-        expect(result.tables[0].indexes).toHaveLength(1);
-        expect(result.tables[0].indexes[0].name).toBe(
-            'UQ_arcane_libraries_code'
-        );
-        expect(result.tables[0].indexes[0].unique).toBe(true);
-        expect(result.tables[0].indexes[0].columns).toContain('Code');
-    });
+    expect(result.tables).toHaveLength(1);
+    expect(result.tables[0].indexes).toHaveLength(1);
+    expect(result.tables[0].indexes[0].name).toBe('UQ_arcane_libraries_code');
+    expect(result.tables[0].indexes[0].unique).toBe(true);
+    expect(result.tables[0].indexes[0].columns).toContain('Code');
+  });
 
-    it('should handle default values', async () => {
-        const sql = `
+  it('should handle default values', async () => {
+    const sql = `
             CREATE TABLE [dbo].[potion_recipes] (
                 [Id] [uniqueidentifier] NOT NULL DEFAULT NEWID(),
                 [Name] [nvarchar](255) NOT NULL,
@@ -304,21 +292,19 @@ describe('SQL Server Core Parser Tests', () => {
             );
         `;
 
-        const result = await fromSQLServer(sql);
+    const result = await fromSQLServer(sql);
 
-        expect(result.tables).toHaveLength(1);
-        const columns = result.tables[0].columns;
+    expect(result.tables).toHaveLength(1);
+    const columns = result.tables[0].columns;
 
-        expect(columns.find((c) => c.name === 'Id')?.default).toBeDefined();
-        expect(columns.find((c) => c.name === 'IsActive')?.default).toBe('1');
-        expect(
-            columns.find((c) => c.name === 'CreatedAt')?.default
-        ).toBeDefined();
-        expect(columns.find((c) => c.name === 'Difficulty')?.default).toBe('5');
-    });
+    expect(columns.find((c) => c.name === 'Id')?.default).toBeDefined();
+    expect(columns.find((c) => c.name === 'IsActive')?.default).toBe('1');
+    expect(columns.find((c) => c.name === 'CreatedAt')?.default).toBeDefined();
+    expect(columns.find((c) => c.name === 'Difficulty')?.default).toBe('5');
+  });
 
-    it('should parse indexes created separately', async () => {
-        const sql = `
+  it('should parse indexes created separately', async () => {
+    const sql = `
             CREATE TABLE [dbo].[spell_books] (
                 [Id] [uniqueidentifier] NOT NULL PRIMARY KEY,
                 [Title] [nvarchar](255) NOT NULL,
@@ -330,21 +316,21 @@ describe('SQL Server Core Parser Tests', () => {
             CREATE UNIQUE INDEX [UIX_spell_books_title] ON [dbo].[spell_books] ([Title]);
         `;
 
-        const result = await fromSQLServer(sql);
+    const result = await fromSQLServer(sql);
 
-        expect(result.tables).toHaveLength(1);
-        expect(result.tables[0].indexes).toHaveLength(2);
+    expect(result.tables).toHaveLength(1);
+    expect(result.tables[0].indexes).toHaveLength(2);
 
-        const authorIndex = result.tables[0].indexes.find(
-            (i) => i.name === 'IX_spell_books_author'
-        );
-        expect(authorIndex?.unique).toBe(false);
-        expect(authorIndex?.columns).toContain('Author');
+    const authorIndex = result.tables[0].indexes.find(
+      (i) => i.name === 'IX_spell_books_author'
+    );
+    expect(authorIndex?.unique).toBe(false);
+    expect(authorIndex?.columns).toContain('Author');
 
-        const titleIndex = result.tables[0].indexes.find(
-            (i) => i.name === 'UIX_spell_books_title'
-        );
-        expect(titleIndex?.unique).toBe(true);
-        expect(titleIndex?.columns).toContain('Title');
-    });
+    const titleIndex = result.tables[0].indexes.find(
+      (i) => i.name === 'UIX_spell_books_title'
+    );
+    expect(titleIndex?.unique).toBe(true);
+    expect(titleIndex?.columns).toContain('Title');
+  });
 });

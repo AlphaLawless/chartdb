@@ -4,15 +4,15 @@
  */
 
 import { DatabaseType } from '@/lib/domain/database-type';
-import {
-    validatePostgreSQLDialect,
-    type ValidationResult,
-    type ValidationError,
-    type ValidationWarning,
-} from './validators/postgresql-validator';
 import { validateMySQLDialect } from './validators/mysql-validator';
-import { validateSQLServerDialect } from './validators/sqlserver-validator';
+import {
+  type ValidationError,
+  type ValidationResult,
+  type ValidationWarning,
+  validatePostgreSQLDialect,
+} from './validators/postgresql-validator';
 import { validateSQLiteDialect } from './validators/sqlite-validator';
+import { validateSQLServerDialect } from './validators/sqlserver-validator';
 
 // Re-export types for backward compatibility
 export type { ValidationResult, ValidationError, ValidationWarning };
@@ -24,37 +24,37 @@ export type { ValidationResult, ValidationError, ValidationWarning };
  * @returns ValidationResult with errors, warnings, and optional fixed SQL
  */
 export function validateSQL(
-    sql: string,
-    databaseType: DatabaseType
+  sql: string,
+  databaseType: DatabaseType
 ): ValidationResult {
-    switch (databaseType) {
-        case DatabaseType.POSTGRESQL:
-            return validatePostgreSQLDialect(sql);
+  switch (databaseType) {
+    case DatabaseType.POSTGRESQL:
+      return validatePostgreSQLDialect(sql);
 
-        case DatabaseType.MYSQL:
-            return validateMySQLDialect(sql);
+    case DatabaseType.MYSQL:
+      return validateMySQLDialect(sql);
 
-        case DatabaseType.SQL_SERVER:
-            return validateSQLServerDialect(sql);
+    case DatabaseType.SQL_SERVER:
+      return validateSQLServerDialect(sql);
 
-        case DatabaseType.SQLITE:
-            return validateSQLiteDialect(sql);
+    case DatabaseType.SQLITE:
+      return validateSQLiteDialect(sql);
 
-        case DatabaseType.MARIADB:
-            // MariaDB uses MySQL validator
-            return validateMySQLDialect(sql);
+    case DatabaseType.MARIADB:
+      // MariaDB uses MySQL validator
+      return validateMySQLDialect(sql);
 
-        default:
-            return {
-                isValid: false,
-                errors: [
-                    {
-                        line: 1,
-                        message: `Unsupported database type: ${databaseType}`,
-                        type: 'unsupported',
-                    },
-                ],
-                warnings: [],
-            };
-    }
+    default:
+      return {
+        isValid: false,
+        errors: [
+          {
+            line: 1,
+            message: `Unsupported database type: ${databaseType}`,
+            type: 'unsupported',
+          },
+        ],
+        warnings: [],
+      };
+  }
 }

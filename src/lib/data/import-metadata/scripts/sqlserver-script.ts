@@ -406,13 +406,11 @@ SELECT JSON_QUERY(
 ) AS metadata_json_to_import;`;
 
 export const getSqlServerQuery = (
-    options: {
-        databaseEdition?: DatabaseEdition;
-    } = {}
+  options: { databaseEdition?: DatabaseEdition } = {}
 ): string => {
-    if (options.databaseEdition === DatabaseEdition.SQL_SERVER_2016_AND_BELOW) {
-        return sqlServer2016AndBelowQuery;
-    }
+  if (options.databaseEdition === DatabaseEdition.SQL_SERVER_2016_AND_BELOW) {
+    return sqlServer2016AndBelowQuery;
+  }
 
-    return sqlServerQuery;
+  return sqlServerQuery;
 };

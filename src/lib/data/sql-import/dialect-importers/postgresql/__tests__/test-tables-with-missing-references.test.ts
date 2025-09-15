@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { fromPostgres } from '../postgresql';
 
 describe('Tables with undefined magical references', () => {
-    it('should parse tables even with references to non-existent magical entities', async () => {
-        const sql = `
+  it('should parse tables even with references to non-existent magical entities', async () => {
+    const sql = `
 CREATE TABLE table1 (
     id UUID PRIMARY KEY
 );
@@ -19,23 +19,23 @@ CREATE TABLE table3 (
     PRIMARY KEY (table1_id, table2_id)
 );`;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        console.log('Test results:', {
-            tableCount: result.tables.length,
-            tableNames: result.tables.map((t) => t.name),
-            warnings: result.warnings,
-        });
-
-        // Should parse all 3 tables even though table2 has undefined reference
-        expect(result.tables).toHaveLength(3);
-
-        const tableNames = result.tables.map((t) => t.name).sort();
-        expect(tableNames).toEqual(['table1', 'table2', 'table3']);
+    console.log('Test results:', {
+      tableCount: result.tables.length,
+      tableNames: result.tables.map((t) => t.name),
+      warnings: result.warnings,
     });
 
-    it('should handle the wizard tower spells and spell plans scenario', async () => {
-        const sql = `
+    // Should parse all 3 tables even though table2 has undefined reference
+    expect(result.tables).toHaveLength(3);
+
+    const tableNames = result.tables.map((t) => t.name).sort();
+    expect(tableNames).toEqual(['table1', 'table2', 'table3']);
+  });
+
+  it('should handle the wizard tower spells and spell plans scenario', async () => {
+    const sql = `
 CREATE TABLE spell_plans (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4()
 );
@@ -53,13 +53,13 @@ CREATE TABLE plan_sample_spells (
     PRIMARY KEY (spell_plan_id, spell_id)
 );`;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(3);
-        expect(result.tables.map((t) => t.name).sort()).toEqual([
-            'plan_sample_spells',
-            'spell_plans',
-            'spells',
-        ]);
-    });
+    expect(result.tables).toHaveLength(3);
+    expect(result.tables.map((t) => t.name).sort()).toEqual([
+      'plan_sample_spells',
+      'spell_plans',
+      'spells',
+    ]);
+  });
 });

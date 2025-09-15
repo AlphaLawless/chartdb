@@ -1,23 +1,23 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { fromPostgres } from '../postgresql';
 
 describe('PostgreSQL Parser Integration', () => {
-    it('should parse simple SQL', async () => {
-        const sql = `
+  it('should parse simple SQL', async () => {
+    const sql = `
             CREATE TABLE wizards (
                 id INTEGER PRIMARY KEY,
                 name VARCHAR(255)
             );
         `;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(1);
-        expect(result.tables[0].name).toBe('wizards');
-    });
+    expect(result.tables).toHaveLength(1);
+    expect(result.tables[0].name).toBe('wizards');
+  });
 
-    it('should handle functions correctly', async () => {
-        const sql = `
+  it('should handle functions correctly', async () => {
+    const sql = `
             CREATE TABLE wizards (id INTEGER PRIMARY KEY);
             
             CREATE FUNCTION get_wizard() RETURNS INTEGER AS $$
@@ -27,14 +27,14 @@ describe('PostgreSQL Parser Integration', () => {
             $$ LANGUAGE plpgsql;
         `;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(1);
-        expect(result.tables[0].name).toBe('wizards');
-    });
+    expect(result.tables).toHaveLength(1);
+    expect(result.tables[0].name).toBe('wizards');
+  });
 
-    it('should handle policies correctly', async () => {
-        const sql = `
+  it('should handle policies correctly', async () => {
+    const sql = `
             CREATE TABLE ancient_scrolls (id INTEGER PRIMARY KEY);
             
             CREATE POLICY wizard_policy ON ancient_scrolls
@@ -42,24 +42,24 @@ describe('PostgreSQL Parser Integration', () => {
                 USING (true);
         `;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(1);
-    });
+    expect(result.tables).toHaveLength(1);
+  });
 
-    it('should handle RLS correctly', async () => {
-        const sql = `
+  it('should handle RLS correctly', async () => {
+    const sql = `
             CREATE TABLE enchanted_vault (id INTEGER PRIMARY KEY);
             ALTER TABLE enchanted_vault ENABLE ROW LEVEL SECURITY;
         `;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(1);
-    });
+    expect(result.tables).toHaveLength(1);
+  });
 
-    it('should handle triggers correctly', async () => {
-        const sql = `
+  it('should handle triggers correctly', async () => {
+    const sql = `
             CREATE TABLE spell_log (id INTEGER PRIMARY KEY);
             
             CREATE TRIGGER spell_trigger
@@ -68,13 +68,13 @@ describe('PostgreSQL Parser Integration', () => {
                 EXECUTE FUNCTION spell_func();
         `;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(1);
-    });
+    expect(result.tables).toHaveLength(1);
+  });
 
-    it('should preserve all relationships', async () => {
-        const sql = `
+  it('should preserve all relationships', async () => {
+    const sql = `
             CREATE TABLE guilds (id INTEGER PRIMARY KEY);
             CREATE TABLE wizards (
                 id INTEGER PRIMARY KEY,
@@ -91,26 +91,26 @@ describe('PostgreSQL Parser Integration', () => {
             );
         `;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        expect(result.tables).toHaveLength(3);
-        expect(result.relationships).toHaveLength(3);
+    expect(result.tables).toHaveLength(3);
+    expect(result.relationships).toHaveLength(3);
 
-        // Verify all relationships are preserved
-        expect(
-            result.relationships.some(
-                (r) => r.sourceTable === 'wizards' && r.targetTable === 'guilds'
-            )
-        ).toBe(true);
-        expect(
-            result.relationships.some(
-                (r) => r.sourceTable === 'quests' && r.targetTable === 'wizards'
-            )
-        ).toBe(true);
-        expect(
-            result.relationships.some(
-                (r) => r.sourceTable === 'quests' && r.targetTable === 'guilds'
-            )
-        ).toBe(true);
-    });
+    // Verify all relationships are preserved
+    expect(
+      result.relationships.some(
+        (r) => r.sourceTable === 'wizards' && r.targetTable === 'guilds'
+      )
+    ).toBe(true);
+    expect(
+      result.relationships.some(
+        (r) => r.sourceTable === 'quests' && r.targetTable === 'wizards'
+      )
+    ).toBe(true);
+    expect(
+      result.relationships.some(
+        (r) => r.sourceTable === 'quests' && r.targetTable === 'guilds'
+      )
+    ).toBe(true);
+  });
 });

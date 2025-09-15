@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { fromSQLServer } from '../sqlserver';
 
 describe('SQL Server Real-World Examples', () => {
-    describe('Magical Academy Example', () => {
-        it('should parse the magical academy example with all 16 tables', async () => {
-            const sql = `
+  describe('Magical Academy Example', () => {
+    it('should parse the magical academy example with all 16 tables', async () => {
+      const sql = `
                 CREATE TABLE [dbo].[schools](
                     [id] [uniqueidentifier] PRIMARY KEY DEFAULT NEWID(),
                     [name] [nvarchar](255) NOT NULL,
@@ -164,69 +164,67 @@ describe('SQL Server Real-World Examples', () => {
                 );
             `;
 
-            const result = await fromSQLServer(sql);
+      const result = await fromSQLServer(sql);
 
-            // Should find all 16 tables
-            const expectedTables = [
-                'apprentices',
-                'arcane_logs',
-                'gold_payments',
-                'grimoire_types',
-                'grimoires',
-                'patron_sponsorships',
-                'rank_spell_permissions',
-                'ranks',
-                'schools',
-                'spell_lessons',
-                'spell_permissions',
-                'towers',
-                'tuition_items',
-                'tuition_scrolls',
-                'wizard_ranks',
-                'wizards',
-            ];
+      // Should find all 16 tables
+      const expectedTables = [
+        'apprentices',
+        'arcane_logs',
+        'gold_payments',
+        'grimoire_types',
+        'grimoires',
+        'patron_sponsorships',
+        'rank_spell_permissions',
+        'ranks',
+        'schools',
+        'spell_lessons',
+        'spell_permissions',
+        'towers',
+        'tuition_items',
+        'tuition_scrolls',
+        'wizard_ranks',
+        'wizards',
+      ];
 
-            expect(result.tables).toHaveLength(16);
-            expect(result.tables.map((t) => t.name).sort()).toEqual(
-                expectedTables
-            );
+      expect(result.tables).toHaveLength(16);
+      expect(result.tables.map((t) => t.name).sort()).toEqual(expectedTables);
 
-            // Verify key relationships exist
-            const relationships = result.relationships;
+      // Verify key relationships exist
+      const relationships = result.relationships;
 
-            // Check some critical relationships
-            expect(
-                relationships.some(
-                    (r) =>
-                        r.sourceTable === 'wizards' &&
-                        r.targetTable === 'schools' &&
-                        r.sourceColumn === 'school_id'
-                )
-            ).toBe(true);
+      // Check some critical relationships
+      expect(
+        relationships.some(
+          (r) =>
+            r.sourceTable === 'wizards' &&
+            r.targetTable === 'schools' &&
+            r.sourceColumn === 'school_id'
+        )
+      ).toBe(true);
 
-            expect(
-                relationships.some(
-                    (r) =>
-                        r.sourceTable === 'wizard_ranks' &&
-                        r.targetTable === 'wizards' &&
-                        r.sourceColumn === 'wizard_id'
-                )
-            ).toBe(true);
+      expect(
+        relationships.some(
+          (r) =>
+            r.sourceTable === 'wizard_ranks' &&
+            r.targetTable === 'wizards' &&
+            r.sourceColumn === 'wizard_id'
+        )
+      ).toBe(true);
 
-            expect(
-                relationships.some(
-                    (r) =>
-                        r.sourceTable === 'apprentices' &&
-                        r.targetTable === 'wizards' &&
-                        r.sourceColumn === 'primary_mentor'
-                )
-            ).toBe(true);
-        });
+      expect(
+        relationships.some(
+          (r) =>
+            r.sourceTable === 'apprentices' &&
+            r.targetTable === 'wizards' &&
+            r.sourceColumn === 'primary_mentor'
+        )
+      ).toBe(true);
     });
+  });
 
-    describe('Enchanted Bazaar Example', () => {
-        it('should parse the enchanted bazaar example with complex features', async () => {
-            const sql = `
+  describe('Enchanted Bazaar Example', () => {
+    it('should parse the enchanted bazaar example with complex features', async () => {
+      const sql = `
                 -- Enchanted Bazaar tables with complex features
                 CREATE TABLE [dbo].[merchants](
                     [id] [int] IDENTITY(1,1) PRIMARY KEY,
@@ -267,56 +265,50 @@ describe('SQL Server Real-World Examples', () => {
                 CREATE UNIQUE INDEX [UIX_artifacts_name_merchant] ON [dbo].[artifacts] ([name], [merchant_id]);
             `;
 
-            const result = await fromSQLServer(sql);
+      const result = await fromSQLServer(sql);
 
-            // Should parse all tables
-            expect(result.tables.length).toBeGreaterThanOrEqual(4);
+      // Should parse all tables
+      expect(result.tables.length).toBeGreaterThanOrEqual(4);
 
-            // Check for specific tables
-            const tableNames = result.tables.map((t) => t.name);
-            expect(tableNames).toContain('merchants');
-            expect(tableNames).toContain('artifacts');
-            expect(tableNames).toContain('trades');
-            expect(tableNames).toContain('trade_items');
+      // Check for specific tables
+      const tableNames = result.tables.map((t) => t.name);
+      expect(tableNames).toContain('merchants');
+      expect(tableNames).toContain('artifacts');
+      expect(tableNames).toContain('trades');
+      expect(tableNames).toContain('trade_items');
 
-            // Check relationships
-            expect(
-                result.relationships.some(
-                    (r) =>
-                        r.sourceTable === 'artifacts' &&
-                        r.targetTable === 'merchants'
-                )
-            ).toBe(true);
+      // Check relationships
+      expect(
+        result.relationships.some(
+          (r) => r.sourceTable === 'artifacts' && r.targetTable === 'merchants'
+        )
+      ).toBe(true);
 
-            expect(
-                result.relationships.some(
-                    (r) =>
-                        r.sourceTable === 'trade_items' &&
-                        r.targetTable === 'trades'
-                )
-            ).toBe(true);
+      expect(
+        result.relationships.some(
+          (r) => r.sourceTable === 'trade_items' && r.targetTable === 'trades'
+        )
+      ).toBe(true);
 
-            // Check indexes were created
-            const artifactsTable = result.tables.find(
-                (t) => t.name === 'artifacts'
-            );
-            expect(artifactsTable?.indexes.length).toBeGreaterThanOrEqual(2);
-            expect(
-                artifactsTable?.indexes.some(
-                    (i) => i.name === 'IX_artifacts_merchant_id'
-                )
-            ).toBe(true);
-            expect(
-                artifactsTable?.indexes.some(
-                    (i) => i.unique && i.name === 'UIX_artifacts_name_merchant'
-                )
-            ).toBe(true);
-        });
+      // Check indexes were created
+      const artifactsTable = result.tables.find((t) => t.name === 'artifacts');
+      expect(artifactsTable?.indexes.length).toBeGreaterThanOrEqual(2);
+      expect(
+        artifactsTable?.indexes.some(
+          (i) => i.name === 'IX_artifacts_merchant_id'
+        )
+      ).toBe(true);
+      expect(
+        artifactsTable?.indexes.some(
+          (i) => i.unique && i.name === 'UIX_artifacts_name_merchant'
+        )
+      ).toBe(true);
     });
+  });
 
-    describe('Complex SQL Server Schema Example', () => {
-        it('should parse complex multi-schema database with various SQL Server features', async () => {
-            const sql = `
+  describe('Complex SQL Server Schema Example', () => {
+    it('should parse complex multi-schema database with various SQL Server features', async () => {
+      const sql = `
                 CREATE SCHEMA [magic];
                 GO
                 CREATE SCHEMA [inventory];
@@ -411,68 +403,59 @@ describe('SQL Server Real-World Examples', () => {
                 CREATE UNIQUE INDEX [UIX_items_name_type] ON [inventory].[magical_items] ([item_name], [item_type_id]);
             `;
 
-            const result = await fromSQLServer(sql);
+      const result = await fromSQLServer(sql);
 
-            // Verify all tables are parsed
-            expect(result.tables).toHaveLength(7);
+      // Verify all tables are parsed
+      expect(result.tables).toHaveLength(7);
 
-            // Check schema assignment
-            expect(
-                result.tables.filter((t) => t.schema === 'magic')
-            ).toHaveLength(2);
-            expect(
-                result.tables.filter((t) => t.schema === 'inventory')
-            ).toHaveLength(3);
-            expect(
-                result.tables.filter((t) => t.schema === 'academy')
-            ).toHaveLength(2);
+      // Check schema assignment
+      expect(result.tables.filter((t) => t.schema === 'magic')).toHaveLength(2);
+      expect(
+        result.tables.filter((t) => t.schema === 'inventory')
+      ).toHaveLength(3);
+      expect(result.tables.filter((t) => t.schema === 'academy')).toHaveLength(
+        2
+      );
 
-            // Verify cross-schema relationships
-            const crossSchemaRel = result.relationships.find(
-                (r) => r.sourceTable === 'courses' && r.targetTable === 'spells'
-            );
-            expect(crossSchemaRel).toBeDefined();
-            expect(crossSchemaRel?.sourceSchema).toBe('academy');
-            expect(crossSchemaRel?.targetSchema).toBe('magic');
+      // Verify cross-schema relationships
+      const crossSchemaRel = result.relationships.find(
+        (r) => r.sourceTable === 'courses' && r.targetTable === 'spells'
+      );
+      expect(crossSchemaRel).toBeDefined();
+      expect(crossSchemaRel?.sourceSchema).toBe('academy');
+      expect(crossSchemaRel?.targetSchema).toBe('magic');
 
-            // Check various SQL Server data types
-            const spellsTable = result.tables.find((t) => t.name === 'spells');
-            expect(
-                spellsTable?.columns.find((c) => c.name === 'mana_cost')?.type
-            ).toBe('smallint');
-            expect(
-                spellsTable?.columns.find((c) => c.name === 'metadata')?.type
-            ).toBe('xml');
+      // Check various SQL Server data types
+      const spellsTable = result.tables.find((t) => t.name === 'spells');
+      expect(
+        spellsTable?.columns.find((c) => c.name === 'mana_cost')?.type
+      ).toBe('smallint');
+      expect(
+        spellsTable?.columns.find((c) => c.name === 'metadata')?.type
+      ).toBe('xml');
 
-            const itemsTable = result.tables.find(
-                (t) => t.name === 'magical_items'
-            );
-            expect(
-                itemsTable?.columns.find((c) => c.name === 'weight_kg')?.type
-            ).toBe('float');
-            expect(
-                itemsTable?.columns.find((c) => c.name === 'base_value')?.type
-            ).toBe('money');
-            expect(
-                itemsTable?.columns.find((c) => c.name === 'discovered_date')
-                    ?.type
-            ).toBe('date');
-            expect(
-                itemsTable?.columns.find((c) => c.name === 'discovered_time')
-                    ?.type
-            ).toBe('time');
-            expect(
-                itemsTable?.columns.find((c) => c.name === 'full_discovered_at')
-                    ?.type
-            ).toBe('datetimeoffset');
+      const itemsTable = result.tables.find((t) => t.name === 'magical_items');
+      expect(
+        itemsTable?.columns.find((c) => c.name === 'weight_kg')?.type
+      ).toBe('float');
+      expect(
+        itemsTable?.columns.find((c) => c.name === 'base_value')?.type
+      ).toBe('money');
+      expect(
+        itemsTable?.columns.find((c) => c.name === 'discovered_date')?.type
+      ).toBe('date');
+      expect(
+        itemsTable?.columns.find((c) => c.name === 'discovered_time')?.type
+      ).toBe('time');
+      expect(
+        itemsTable?.columns.find((c) => c.name === 'full_discovered_at')?.type
+      ).toBe('datetimeoffset');
 
-            // Verify IDENTITY columns
-            const itemTypesTable = result.tables.find(
-                (t) => t.name === 'item_types'
-            );
-            expect(
-                itemTypesTable?.columns.find((c) => c.name === 'id')?.increment
-            ).toBe(true);
-        });
+      // Verify IDENTITY columns
+      const itemTypesTable = result.tables.find((t) => t.name === 'item_types');
+      expect(
+        itemTypesTable?.columns.find((c) => c.name === 'id')?.increment
+      ).toBe(true);
     });
+  });
 });

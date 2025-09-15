@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { fromSQLServer } from '../sqlserver';
 
 describe('SQL Server Multi-Schema Database Tests', () => {
-    it('should parse a fantasy-themed multi-schema database with cross-schema relationships', async () => {
-        const sql = `
+  it('should parse a fantasy-themed multi-schema database with cross-schema relationships', async () => {
+    const sql = `
 -- =============================================
 -- Magical Realm Multi-Schema Database
 -- A comprehensive fantasy database with multiple schemas
@@ -344,185 +344,179 @@ ALTER TABLE [marketplace].[transactions] ADD CONSTRAINT [FK_MarketTransactions_P
 -- Note: Testing table reference without schema prefix defaults to dbo schema
         `;
 
-        const result = await fromSQLServer(sql);
+    const result = await fromSQLServer(sql);
 
-        // Verify all schemas are recognized
-        const schemas = new Set(result.tables.map((t) => t.schema));
-        expect(schemas.has('realm')).toBe(true);
-        expect(schemas.has('academy')).toBe(true);
-        expect(schemas.has('treasury')).toBe(true);
-        expect(schemas.has('combat')).toBe(true);
-        expect(schemas.has('marketplace')).toBe(true);
+    // Verify all schemas are recognized
+    const schemas = new Set(result.tables.map((t) => t.schema));
+    expect(schemas.has('realm')).toBe(true);
+    expect(schemas.has('academy')).toBe(true);
+    expect(schemas.has('treasury')).toBe(true);
+    expect(schemas.has('combat')).toBe(true);
+    expect(schemas.has('marketplace')).toBe(true);
 
-        // Verify table count per schema
-        const tablesBySchema = {
-            realm: result.tables.filter((t) => t.schema === 'realm').length,
-            academy: result.tables.filter((t) => t.schema === 'academy').length,
-            treasury: result.tables.filter((t) => t.schema === 'treasury')
-                .length,
-            combat: result.tables.filter((t) => t.schema === 'combat').length,
-            marketplace: result.tables.filter((t) => t.schema === 'marketplace')
-                .length,
-        };
+    // Verify table count per schema
+    const tablesBySchema = {
+      realm: result.tables.filter((t) => t.schema === 'realm').length,
+      academy: result.tables.filter((t) => t.schema === 'academy').length,
+      treasury: result.tables.filter((t) => t.schema === 'treasury').length,
+      combat: result.tables.filter((t) => t.schema === 'combat').length,
+      marketplace: result.tables.filter((t) => t.schema === 'marketplace')
+        .length,
+    };
 
-        expect(tablesBySchema.realm).toBe(3); // kingdoms, cities, guilds
-        expect(tablesBySchema.academy).toBe(4); // schools, students, courses, enrollments
-        expect(tablesBySchema.treasury).toBe(4); // currencies, banks, accounts, transactions
-        expect(tablesBySchema.combat).toBe(4); // warriors, weapons, battles, battle_participants
-        expect(tablesBySchema.marketplace).toBe(4); // merchants, items, trade_routes, transactions
+    expect(tablesBySchema.realm).toBe(3); // kingdoms, cities, guilds
+    expect(tablesBySchema.academy).toBe(4); // schools, students, courses, enrollments
+    expect(tablesBySchema.treasury).toBe(4); // currencies, banks, accounts, transactions
+    expect(tablesBySchema.combat).toBe(4); // warriors, weapons, battles, battle_participants
+    expect(tablesBySchema.marketplace).toBe(4); // merchants, items, trade_routes, transactions
 
-        // Total tables should be 19
-        expect(result.tables.length).toBe(19);
+    // Total tables should be 19
+    expect(result.tables.length).toBe(19);
 
-        // Debug: log which relationships are missing
-        const expectedRelationshipNames = [
-            'FK_Cities_Kingdoms',
-            'FK_Guilds_Cities',
-            'FK_Schools_Cities',
-            'FK_Students_Schools',
-            'FK_Students_Kingdoms',
-            'FK_Students_Guilds',
-            'FK_Courses_Schools',
-            'FK_Enrollments_Students',
-            'FK_Enrollments_Courses',
-            'FK_Currencies_Kingdoms',
-            'FK_Banks_Cities',
-            'FK_Accounts_Banks',
-            'FK_Accounts_Currencies',
-            'FK_Transactions_FromAccount',
-            'FK_Transactions_ToAccount',
-            'FK_Transactions_Currency',
-            'FK_Warriors_Guilds',
-            'FK_Warriors_Cities',
-            'FK_Weapons_Warriors',
-            'FK_Battles_Cities',
-            'FK_Battles_VictorWarrior',
-            'FK_BattleParticipants_Battles',
-            'FK_BattleParticipants_Warriors',
-            'FK_Merchants_Cities',
-            'FK_Merchants_BankAccounts',
-            'FK_Items_Merchants',
-            'FK_TradeRoutes_FromCity',
-            'FK_TradeRoutes_ToCity',
-            'FK_TradeRoutes_Guilds',
-            'FK_MarketTransactions_Merchants',
-            'FK_MarketTransactions_Items',
-            'FK_MarketTransactions_PaymentAccount',
-        ];
+    // Debug: log which relationships are missing
+    const expectedRelationshipNames = [
+      'FK_Cities_Kingdoms',
+      'FK_Guilds_Cities',
+      'FK_Schools_Cities',
+      'FK_Students_Schools',
+      'FK_Students_Kingdoms',
+      'FK_Students_Guilds',
+      'FK_Courses_Schools',
+      'FK_Enrollments_Students',
+      'FK_Enrollments_Courses',
+      'FK_Currencies_Kingdoms',
+      'FK_Banks_Cities',
+      'FK_Accounts_Banks',
+      'FK_Accounts_Currencies',
+      'FK_Transactions_FromAccount',
+      'FK_Transactions_ToAccount',
+      'FK_Transactions_Currency',
+      'FK_Warriors_Guilds',
+      'FK_Warriors_Cities',
+      'FK_Weapons_Warriors',
+      'FK_Battles_Cities',
+      'FK_Battles_VictorWarrior',
+      'FK_BattleParticipants_Battles',
+      'FK_BattleParticipants_Warriors',
+      'FK_Merchants_Cities',
+      'FK_Merchants_BankAccounts',
+      'FK_Items_Merchants',
+      'FK_TradeRoutes_FromCity',
+      'FK_TradeRoutes_ToCity',
+      'FK_TradeRoutes_Guilds',
+      'FK_MarketTransactions_Merchants',
+      'FK_MarketTransactions_Items',
+      'FK_MarketTransactions_PaymentAccount',
+    ];
 
-        const foundRelationshipNames = result.relationships.map((r) => r.name);
-        const missingRelationships = expectedRelationshipNames.filter(
-            (name) => !foundRelationshipNames.includes(name)
-        );
+    const foundRelationshipNames = result.relationships.map((r) => r.name);
+    const missingRelationships = expectedRelationshipNames.filter(
+      (name) => !foundRelationshipNames.includes(name)
+    );
 
-        if (missingRelationships.length > 0) {
-            console.log('Missing relationships:', missingRelationships);
-            console.log('Found relationships:', foundRelationshipNames);
-        }
+    if (missingRelationships.length > 0) {
+      console.log('Missing relationships:', missingRelationships);
+      console.log('Found relationships:', foundRelationshipNames);
+    }
 
-        // Verify relationships count - we have 32 working relationships
-        expect(result.relationships.length).toBe(32);
+    // Verify relationships count - we have 32 working relationships
+    expect(result.relationships.length).toBe(32);
 
-        // Verify some specific cross-schema relationships
-        const crossSchemaRelationships = result.relationships.filter(
-            (r) => r.sourceSchema !== r.targetSchema
-        );
+    // Verify some specific cross-schema relationships
+    const crossSchemaRelationships = result.relationships.filter(
+      (r) => r.sourceSchema !== r.targetSchema
+    );
 
-        expect(crossSchemaRelationships.length).toBeGreaterThan(10); // Many cross-schema relationships
+    expect(crossSchemaRelationships.length).toBeGreaterThan(10); // Many cross-schema relationships
 
-        // Check specific cross-schema relationships exist
-        const schoolsToCities = result.relationships.find(
-            (r) =>
-                r.sourceTable === 'schools' &&
-                r.sourceSchema === 'academy' &&
-                r.targetTable === 'cities' &&
-                r.targetSchema === 'realm'
-        );
-        expect(schoolsToCities).toBeDefined();
-        expect(schoolsToCities?.name).toBe('FK_Schools_Cities');
+    // Check specific cross-schema relationships exist
+    const schoolsToCities = result.relationships.find(
+      (r) =>
+        r.sourceTable === 'schools' &&
+        r.sourceSchema === 'academy' &&
+        r.targetTable === 'cities' &&
+        r.targetSchema === 'realm'
+    );
+    expect(schoolsToCities).toBeDefined();
+    expect(schoolsToCities?.name).toBe('FK_Schools_Cities');
 
-        const studentsToKingdoms = result.relationships.find(
-            (r) =>
-                r.sourceTable === 'students' &&
-                r.sourceSchema === 'academy' &&
-                r.targetTable === 'kingdoms' &&
-                r.targetSchema === 'realm'
-        );
-        expect(studentsToKingdoms).toBeDefined();
-        expect(studentsToKingdoms?.name).toBe('FK_Students_Kingdoms');
+    const studentsToKingdoms = result.relationships.find(
+      (r) =>
+        r.sourceTable === 'students' &&
+        r.sourceSchema === 'academy' &&
+        r.targetTable === 'kingdoms' &&
+        r.targetSchema === 'realm'
+    );
+    expect(studentsToKingdoms).toBeDefined();
+    expect(studentsToKingdoms?.name).toBe('FK_Students_Kingdoms');
 
-        const warriorsToGuilds = result.relationships.find(
-            (r) =>
-                r.sourceTable === 'warriors' &&
-                r.sourceSchema === 'combat' &&
-                r.targetTable === 'guilds' &&
-                r.targetSchema === 'realm'
-        );
-        expect(warriorsToGuilds).toBeDefined();
-        expect(warriorsToGuilds?.name).toBe('FK_Warriors_Guilds');
+    const warriorsToGuilds = result.relationships.find(
+      (r) =>
+        r.sourceTable === 'warriors' &&
+        r.sourceSchema === 'combat' &&
+        r.targetTable === 'guilds' &&
+        r.targetSchema === 'realm'
+    );
+    expect(warriorsToGuilds).toBeDefined();
+    expect(warriorsToGuilds?.name).toBe('FK_Warriors_Guilds');
 
-        const merchantsToAccounts = result.relationships.find(
-            (r) =>
-                r.sourceTable === 'merchants' &&
-                r.sourceSchema === 'marketplace' &&
-                r.targetTable === 'accounts' &&
-                r.targetSchema === 'treasury'
-        );
-        expect(merchantsToAccounts).toBeDefined();
-        expect(merchantsToAccounts?.name).toBe('FK_Merchants_BankAccounts');
+    const merchantsToAccounts = result.relationships.find(
+      (r) =>
+        r.sourceTable === 'merchants' &&
+        r.sourceSchema === 'marketplace' &&
+        r.targetTable === 'accounts' &&
+        r.targetSchema === 'treasury'
+    );
+    expect(merchantsToAccounts).toBeDefined();
+    expect(merchantsToAccounts?.name).toBe('FK_Merchants_BankAccounts');
 
-        // Verify all relationships have valid source and target table IDs
-        const validRelationships = result.relationships.filter(
-            (r) => r.sourceTableId && r.targetTableId
-        );
-        expect(validRelationships.length).toBe(result.relationships.length);
+    // Verify all relationships have valid source and target table IDs
+    const validRelationships = result.relationships.filter(
+      (r) => r.sourceTableId && r.targetTableId
+    );
+    expect(validRelationships.length).toBe(result.relationships.length);
 
-        // Check that table IDs are properly linked
-        for (const rel of result.relationships) {
-            const sourceTable = result.tables.find(
-                (t) =>
-                    t.name === rel.sourceTable && t.schema === rel.sourceSchema
-            );
-            const targetTable = result.tables.find(
-                (t) =>
-                    t.name === rel.targetTable && t.schema === rel.targetSchema
-            );
+    // Check that table IDs are properly linked
+    for (const rel of result.relationships) {
+      const sourceTable = result.tables.find(
+        (t) => t.name === rel.sourceTable && t.schema === rel.sourceSchema
+      );
+      const targetTable = result.tables.find(
+        (t) => t.name === rel.targetTable && t.schema === rel.targetSchema
+      );
 
-            expect(sourceTable).toBeDefined();
-            expect(targetTable).toBeDefined();
-            expect(rel.sourceTableId).toBe(sourceTable?.id);
-            expect(rel.targetTableId).toBe(targetTable?.id);
-        }
+      expect(sourceTable).toBeDefined();
+      expect(targetTable).toBeDefined();
+      expect(rel.sourceTableId).toBe(sourceTable?.id);
+      expect(rel.targetTableId).toBe(targetTable?.id);
+    }
 
-        // Test relationships within the same schema
-        const withinSchemaRels = result.relationships.filter(
-            (r) => r.sourceSchema === r.targetSchema
-        );
-        expect(withinSchemaRels.length).toBeGreaterThan(10);
+    // Test relationships within the same schema
+    const withinSchemaRels = result.relationships.filter(
+      (r) => r.sourceSchema === r.targetSchema
+    );
+    expect(withinSchemaRels.length).toBeGreaterThan(10);
 
-        // Verify specific within-schema relationship
-        const citiesToKingdoms = result.relationships.find(
-            (r) =>
-                r.sourceTable === 'cities' &&
-                r.targetTable === 'kingdoms' &&
-                r.sourceSchema === 'realm' &&
-                r.targetSchema === 'realm'
-        );
-        expect(citiesToKingdoms).toBeDefined();
+    // Verify specific within-schema relationship
+    const citiesToKingdoms = result.relationships.find(
+      (r) =>
+        r.sourceTable === 'cities' &&
+        r.targetTable === 'kingdoms' &&
+        r.sourceSchema === 'realm' &&
+        r.targetSchema === 'realm'
+    );
+    expect(citiesToKingdoms).toBeDefined();
 
-        console.log('Multi-schema test results:');
-        console.log('Total schemas:', schemas.size);
-        console.log('Total tables:', result.tables.length);
-        console.log('Total relationships:', result.relationships.length);
-        console.log(
-            'Cross-schema relationships:',
-            crossSchemaRelationships.length
-        );
-        console.log('Within-schema relationships:', withinSchemaRels.length);
-    });
+    console.log('Multi-schema test results:');
+    console.log('Total schemas:', schemas.size);
+    console.log('Total tables:', result.tables.length);
+    console.log('Total relationships:', result.relationships.length);
+    console.log('Cross-schema relationships:', crossSchemaRelationships.length);
+    console.log('Within-schema relationships:', withinSchemaRels.length);
+  });
 
-    it('should handle mixed schema notation formats', async () => {
-        const sql = `
+  it('should handle mixed schema notation formats', async () => {
+    const sql = `
 -- Mix of different schema notation styles
 CREATE TABLE [dbo].[table1] (
     [id] INT PRIMARY KEY,
@@ -550,24 +544,24 @@ ALTER TABLE [schema1].[table3] ADD CONSTRAINT [FK3]
     FOREIGN KEY ([id]) REFERENCES table2(id);
         `;
 
-        const result = await fromSQLServer(sql);
+    const result = await fromSQLServer(sql);
 
-        expect(result.tables.length).toBe(3);
-        expect(result.relationships.length).toBe(3);
+    expect(result.tables.length).toBe(3);
+    expect(result.relationships.length).toBe(3);
 
-        // Verify schemas are correctly assigned
-        const table1 = result.tables.find((t) => t.name === 'table1');
-        const table2 = result.tables.find((t) => t.name === 'table2');
-        const table3 = result.tables.find((t) => t.name === 'table3');
+    // Verify schemas are correctly assigned
+    const table1 = result.tables.find((t) => t.name === 'table1');
+    const table2 = result.tables.find((t) => t.name === 'table2');
+    const table3 = result.tables.find((t) => t.name === 'table3');
 
-        expect(table1?.schema).toBe('dbo');
-        expect(table2?.schema).toBe('dbo');
-        expect(table3?.schema).toBe('schema1');
+    expect(table1?.schema).toBe('dbo');
+    expect(table2?.schema).toBe('dbo');
+    expect(table3?.schema).toBe('schema1');
 
-        // Verify all relationships are properly linked
-        for (const rel of result.relationships) {
-            expect(rel.sourceTableId).toBeTruthy();
-            expect(rel.targetTableId).toBeTruthy();
-        }
-    });
+    // Verify all relationships are properly linked
+    for (const rel of result.relationships) {
+      expect(rel.sourceTableId).toBeTruthy();
+      expect(rel.targetTableId).toBeTruthy();
+    }
+  });
 });

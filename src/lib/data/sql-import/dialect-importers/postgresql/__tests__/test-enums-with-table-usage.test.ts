@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { fromPostgres } from '../postgresql';
 
 describe('Test All 5 Enums', () => {
-    it('should parse all 5 enum types', async () => {
-        // Test with exact SQL from the file
-        const sql = `
+  it('should parse all 5 enum types', async () => {
+    // Test with exact SQL from the file
+    const sql = `
 -- Using ENUM types for fixed sets of values improves data integrity.
 CREATE TYPE quest_status AS ENUM ('active', 'paused', 'grace_period', 'expired', 'completed');
 CREATE TYPE spell_frequency AS ENUM ('daily', 'weekly');
@@ -20,40 +20,38 @@ CREATE TABLE spellbooks (
 );
 `;
 
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        // Debug output
-        console.log('Enums found:', result.enums?.length || 0);
-        if (result.enums) {
-            result.enums.forEach((e) => {
-                console.log(`  - ${e.name}`);
-            });
-        }
+    // Debug output
+    console.log('Enums found:', result.enums?.length || 0);
+    if (result.enums) {
+      result.enums.forEach((e) => {
+        console.log(`  - ${e.name}`);
+      });
+    }
 
-        expect(result.enums).toBeDefined();
-        expect(result.enums).toHaveLength(5);
+    expect(result.enums).toBeDefined();
+    expect(result.enums).toHaveLength(5);
 
-        // Check all enum names
-        const enumNames = result.enums!.map((e) => e.name).sort();
-        expect(enumNames).toEqual([
-            'magic_time',
-            'mana_status',
-            'quest_status',
-            'ritual_status',
-            'spell_frequency',
-        ]);
+    // Check all enum names
+    const enumNames = result.enums!.map((e) => e.name).sort();
+    expect(enumNames).toEqual([
+      'magic_time',
+      'mana_status',
+      'quest_status',
+      'ritual_status',
+      'spell_frequency',
+    ]);
 
-        // Check quest_status specifically
-        const questStatus = result.enums!.find(
-            (e) => e.name === 'quest_status'
-        );
-        expect(questStatus).toBeDefined();
-        expect(questStatus!.values).toEqual([
-            'active',
-            'paused',
-            'grace_period',
-            'expired',
-            'completed',
-        ]);
-    });
+    // Check quest_status specifically
+    const questStatus = result.enums!.find((e) => e.name === 'quest_status');
+    expect(questStatus).toBeDefined();
+    expect(questStatus!.values).toEqual([
+      'active',
+      'paused',
+      'grace_period',
+      'expired',
+      'completed',
+    ]);
+  });
 });

@@ -1,73 +1,73 @@
-import { emptyFn } from '@/lib/utils';
 import { createContext } from 'react';
+import { emptyFn } from '@/lib/utils';
 
 export type SidebarSection =
-    | 'dbml'
-    | 'tables'
-    | 'refs'
-    | 'areas'
-    | 'customTypes';
+  | 'dbml'
+  | 'tables'
+  | 'refs'
+  | 'areas'
+  | 'customTypes';
 
 export interface LayoutContext {
-    openedTableInSidebar: string | undefined;
-    openTableFromSidebar: (tableId: string) => void;
-    closeAllTablesInSidebar: () => void;
+  openedTableInSidebar: string | undefined;
+  openTableFromSidebar: (tableId: string) => void;
+  closeAllTablesInSidebar: () => void;
 
-    openRelationshipFromSidebar: (relationshipId: string) => void;
-    closeAllRelationshipsInSidebar: () => void;
+  openRelationshipFromSidebar: (relationshipId: string) => void;
+  closeAllRelationshipsInSidebar: () => void;
 
-    openDependencyFromSidebar: (dependencyId: string) => void;
-    closeAllDependenciesInSidebar: () => void;
+  openDependencyFromSidebar: (dependencyId: string) => void;
+  closeAllDependenciesInSidebar: () => void;
 
-    openedRefInSidebar: string | undefined;
-    openRefFromSidebar: (refId: string) => void;
-    closeAllRefsInSidebar: () => void;
+  openedRefInSidebar: string | undefined;
+  openRefFromSidebar: (refId: string) => void;
+  closeAllRefsInSidebar: () => void;
 
-    openedAreaInSidebar: string | undefined;
-    openAreaFromSidebar: (areaId: string) => void;
-    closeAllAreasInSidebar: () => void;
+  openedAreaInSidebar: string | undefined;
+  openAreaFromSidebar: (areaId: string) => void;
+  closeAllAreasInSidebar: () => void;
 
-    openedCustomTypeInSidebar: string | undefined;
-    openCustomTypeFromSidebar: (customTypeId: string) => void;
-    closeAllCustomTypesInSidebar: () => void;
+  openedCustomTypeInSidebar: string | undefined;
+  openCustomTypeFromSidebar: (customTypeId: string) => void;
+  closeAllCustomTypesInSidebar: () => void;
 
-    selectedSidebarSection: SidebarSection;
-    selectSidebarSection: (section: SidebarSection) => void;
+  selectedSidebarSection: SidebarSection;
+  selectSidebarSection: (section: SidebarSection) => void;
 
-    isSidePanelShowed: boolean;
-    hideSidePanel: () => void;
-    showSidePanel: () => void;
-    toggleSidePanel: () => void;
+  isSidePanelShowed: boolean;
+  hideSidePanel: () => void;
+  showSidePanel: () => void;
+  toggleSidePanel: () => void;
 }
 
 export const layoutContext = createContext<LayoutContext>({
-    openedTableInSidebar: undefined,
-    selectedSidebarSection: 'tables',
+  openedTableInSidebar: undefined,
+  selectedSidebarSection: 'tables',
 
-    openRelationshipFromSidebar: emptyFn,
-    closeAllRelationshipsInSidebar: emptyFn,
+  openRelationshipFromSidebar: emptyFn,
+  closeAllRelationshipsInSidebar: emptyFn,
 
-    openDependencyFromSidebar: emptyFn,
-    closeAllDependenciesInSidebar: emptyFn,
+  openDependencyFromSidebar: emptyFn,
+  closeAllDependenciesInSidebar: emptyFn,
 
-    openedRefInSidebar: undefined,
-    openRefFromSidebar: emptyFn,
-    closeAllRefsInSidebar: emptyFn,
+  openedRefInSidebar: undefined,
+  openRefFromSidebar: emptyFn,
+  closeAllRefsInSidebar: emptyFn,
 
-    openedAreaInSidebar: undefined,
-    openAreaFromSidebar: emptyFn,
-    closeAllAreasInSidebar: emptyFn,
+  openedAreaInSidebar: undefined,
+  openAreaFromSidebar: emptyFn,
+  closeAllAreasInSidebar: emptyFn,
 
-    openedCustomTypeInSidebar: undefined,
-    openCustomTypeFromSidebar: emptyFn,
-    closeAllCustomTypesInSidebar: emptyFn,
+  openedCustomTypeInSidebar: undefined,
+  openCustomTypeFromSidebar: emptyFn,
+  closeAllCustomTypesInSidebar: emptyFn,
 
-    selectSidebarSection: emptyFn,
-    openTableFromSidebar: emptyFn,
-    closeAllTablesInSidebar: emptyFn,
+  selectSidebarSection: emptyFn,
+  openTableFromSidebar: emptyFn,
+  closeAllTablesInSidebar: emptyFn,
 
-    isSidePanelShowed: false,
-    hideSidePanel: emptyFn,
-    showSidePanel: emptyFn,
-    toggleSidePanel: emptyFn,
+  isSidePanelShowed: false,
+  hideSidePanel: emptyFn,
+  showSidePanel: emptyFn,
+  toggleSidePanel: emptyFn,
 });

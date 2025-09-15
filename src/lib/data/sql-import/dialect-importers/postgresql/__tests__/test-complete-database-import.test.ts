@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { fromPostgres } from '../postgresql';
 
 describe('Full Database Import - Quest Management System', () => {
-    it('should parse all 20 tables including quest_sample_rewards', async () => {
-        const sql = `-- Quest Management System Database
+  it('should parse all 20 tables including quest_sample_rewards', async () => {
+    const sql = `-- Quest Management System Database
 -- Enums for quest system
 CREATE TYPE quest_status AS ENUM ('draft', 'active', 'on_hold', 'completed', 'abandoned');
 CREATE TYPE difficulty_level AS ENUM ('novice', 'apprentice', 'journeyman', 'expert', 'master');
@@ -178,70 +178,66 @@ CREATE TABLE rewards (
     value INTEGER NOT NULL,
     claimed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );`;
-        const result = await fromPostgres(sql);
+    const result = await fromPostgres(sql);
 
-        console.log('\nParsing results:');
-        console.log(`- Tables found: ${result.tables.length}`);
-        console.log(`- Enums found: ${result.enums?.length || 0}`);
-        console.log(`- Warnings: ${result.warnings?.length || 0}`);
+    console.log('\nParsing results:');
+    console.log(`- Tables found: ${result.tables.length}`);
+    console.log(`- Enums found: ${result.enums?.length || 0}`);
+    console.log(`- Warnings: ${result.warnings?.length || 0}`);
 
-        // List all table names
-        const tableNames = result.tables.map((t) => t.name).sort();
-        console.log('\nTable names:');
-        tableNames.forEach((name, i) => {
-            console.log(`  ${i + 1}. ${name}`);
-        });
-
-        // Should have all 20 tables
-        expect(result.tables).toHaveLength(20);
-
-        // Check for quest_sample_rewards specifically
-        const questSampleRewards = result.tables.find(
-            (t) => t.name === 'quest_sample_rewards'
-        );
-        expect(questSampleRewards).toBeDefined();
-
-        if (questSampleRewards) {
-            console.log('\nquest_sample_rewards table details:');
-            console.log(`- Columns: ${questSampleRewards.columns.length}`);
-            questSampleRewards.columns.forEach((col) => {
-                console.log(
-                    `  - ${col.name}: ${col.type} (nullable: ${col.nullable})`
-                );
-            });
-        }
-
-        // Expected tables
-        const expectedTables = [
-            'adventurers',
-            'guild_masters',
-            'regions',
-            'outposts',
-            'scouts',
-            'scout_region_assignments',
-            'quest_givers',
-            'quest_templates',
-            'quests',
-            'quest_sample_rewards',
-            'quest_rotations',
-            'rotation_quests',
-            'contracts',
-            'completion_events',
-            'bounties',
-            'guild_ledgers',
-            'reputation_logs',
-            'quest_suspensions',
-            'guild_master_actions',
-            'rewards',
-        ];
-
-        expect(tableNames).toEqual(expectedTables.sort());
-
-        // Check that quest_sample_rewards has the expected columns
-        expect(questSampleRewards!.columns).toHaveLength(2);
-        const columnNames = questSampleRewards!.columns
-            .map((c) => c.name)
-            .sort();
-        expect(columnNames).toEqual(['quest_template_id', 'reward_id']);
+    // List all table names
+    const tableNames = result.tables.map((t) => t.name).sort();
+    console.log('\nTable names:');
+    tableNames.forEach((name, i) => {
+      console.log(`  ${i + 1}. ${name}`);
     });
+
+    // Should have all 20 tables
+    expect(result.tables).toHaveLength(20);
+
+    // Check for quest_sample_rewards specifically
+    const questSampleRewards = result.tables.find(
+      (t) => t.name === 'quest_sample_rewards'
+    );
+    expect(questSampleRewards).toBeDefined();
+
+    if (questSampleRewards) {
+      console.log('\nquest_sample_rewards table details:');
+      console.log(`- Columns: ${questSampleRewards.columns.length}`);
+      questSampleRewards.columns.forEach((col) => {
+        console.log(`  - ${col.name}: ${col.type} (nullable: ${col.nullable})`);
+      });
+    }
+
+    // Expected tables
+    const expectedTables = [
+      'adventurers',
+      'guild_masters',
+      'regions',
+      'outposts',
+      'scouts',
+      'scout_region_assignments',
+      'quest_givers',
+      'quest_templates',
+      'quests',
+      'quest_sample_rewards',
+      'quest_rotations',
+      'rotation_quests',
+      'contracts',
+      'completion_events',
+      'bounties',
+      'guild_ledgers',
+      'reputation_logs',
+      'quest_suspensions',
+      'guild_master_actions',
+      'rewards',
+    ];
+
+    expect(tableNames).toEqual(expectedTables.sort());
+
+    // Check that quest_sample_rewards has the expected columns
+    expect(questSampleRewards!.columns).toHaveLength(2);
+    const columnNames = questSampleRewards!.columns.map((c) => c.name).sort();
+    expect(columnNames).toEqual(['quest_template_id', 'reward_id']);
+  });
 });

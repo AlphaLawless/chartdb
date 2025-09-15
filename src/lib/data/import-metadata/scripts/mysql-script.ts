@@ -1,19 +1,16 @@
 import { DatabaseEdition } from '@/lib/domain/database-edition';
 
 export const getMySQLQuery = (
-    options: {
-        databaseEdition?: DatabaseEdition;
-    } = {}
+  options: { databaseEdition?: DatabaseEdition } = {}
 ): string => {
-    const databaseEdition: DatabaseEdition | undefined =
-        options.databaseEdition;
+  const databaseEdition: DatabaseEdition | undefined = options.databaseEdition;
 
-    const withExtras = false;
+  const withExtras = false;
 
-    const withDefault = `IFNULL(REPLACE(REPLACE(cols.column_default, '\\\\', ''), '"', 'ֿֿֿ\\"'), '')`;
-    const withoutDefault = `""`;
+  const withDefault = `IFNULL(REPLACE(REPLACE(cols.column_default, '\\\\', ''), '"', 'ֿֿֿ\\"'), '')`;
+  const withoutDefault = `""`;
 
-    const newMySQLQuery = `WITH fk_info as (
+  const newMySQLQuery = `WITH fk_info as (
 (SELECT (@fk_info:=NULL),
     (SELECT (0)
     FROM (SELECT kcu.table_schema,
@@ -151,7 +148,7 @@ export const getMySQLQuery = (
  FROM fk_info, pk_info, cols, indexes, tbls, views);
 `;
 
-    const oldMySQLQuery = `SELECT CAST(CONCAT(
+  const oldMySQLQuery = `SELECT CAST(CONCAT(
     '{"fk_info": [',
     IFNULL((SELECT GROUP_CONCAT(
         CONCAT('{"schema":"', cast(fk.table_schema as CHAR),
@@ -299,14 +296,14 @@ export const getMySQLQuery = (
     '", "version": "', VERSION(), '"}') AS CHAR) AS metadata_json_to_import
 `;
 
-    // To avoid the nondeterministic truncation and ensure that your query results are consistent.
-    const beforeQuery = `SET SESSION group_concat_max_len = 1000000; -- large enough value to handle your expected result size
+  // To avoid the nondeterministic truncation and ensure that your query results are consistent.
+  const beforeQuery = `SET SESSION group_concat_max_len = 1000000; -- large enough value to handle your expected result size
 `;
 
-    const query =
-        databaseEdition === DatabaseEdition.MYSQL_5_7
-            ? `${beforeQuery}${oldMySQLQuery}`
-            : newMySQLQuery;
+  const query =
+    databaseEdition === DatabaseEdition.MYSQL_5_7
+      ? `${beforeQuery}${oldMySQLQuery}`
+      : newMySQLQuery;
 
-    return query;
+  return query;
 };
